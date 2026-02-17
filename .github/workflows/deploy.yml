@@ -36,13 +36,24 @@ jobs:
             ghcr.io/nextestudios/nextclinic:latest
             ghcr.io/nextestudios/nextclinic:${{ github.sha }}
 
+      - name: Verify SSH Key Format
+        run: |
+          echo "Verificando formato da chave SSH..."
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "❌ VPS_SSH_KEY está vazio!"
+            exit 1
+          fi
+          echo "${{ secrets.VPS_SSH_KEY }}" | head -1 | grep -q "BEGIN" && echo "✓ Cabeçalho BEGIN encontrado" || echo "❌ Cabeçalho BEGIN não encontrado"
+          echo "${{ secrets.VPS_SSH_KEY }}" | tail -1 | grep -q "END" && echo "✓ Rodapé END encontrado" || echo "❌ Rodapé END não encontrado"
+          echo "Linhas na chave: $(echo '${{ secrets.VPS_SSH_KEY }}' | wc -l)"
+
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          timeout: 30s
+          timeout: 60s
           script: |
             set -e
             cd /home/deploy/nextclinic
