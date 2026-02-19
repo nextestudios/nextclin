@@ -6,8 +6,6 @@ import { AppService } from './app.service';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { Tenant } from './tenants/entities/tenant.entity';
-import { User } from './users/entities/user.entity';
 import { PatientsModule } from './patients/patients.module';
 import { VaccinesModule } from './vaccines/vaccines.module';
 import { AppointmentsModule } from './appointments/appointments.module';
@@ -31,8 +29,8 @@ import { NotificationsModule } from './notifications/notifications.module';
         username: configService.get<string>('DATABASE_USER'),
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
-        entities: [Tenant, User],
-        synchronize: true, // Development only!
+        autoLoadEntities: true,
+        synchronize: true,
       }),
       inject: [ConfigService],
     }),

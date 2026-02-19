@@ -7,11 +7,11 @@ async function seed() {
 
     // Try connection with configured user
     const config = {
-        host: 'localhost',
-        user: 'user',
-        password: 'user123',
-        database: 'vacinacao_db',
-        port: 3306
+        host: process.env.DATABASE_HOST || 'localhost',
+        user: process.env.DATABASE_USER || 'user',
+        password: process.env.DATABASE_PASSWORD || 'user123',
+        database: process.env.DATABASE_NAME || 'vacinacao_db',
+        port: Number(process.env.DATABASE_PORT) || 3306
     };
 
     let connection;
