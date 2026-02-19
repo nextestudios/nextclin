@@ -27,7 +27,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Frontend Image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -35,6 +35,15 @@ jobs:
           tags: |
             ghcr.io/nextestudios/nextclinic:latest
             ghcr.io/nextestudios/nextclinic:${{ github.sha }}
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/nextestudios/nextclinic-backend:latest
+            ghcr.io/nextestudios/nextclinic-backend:${{ github.sha }}
 
       - name: Verify SSH Key Format
         run: |
@@ -60,4 +69,6 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
             docker compose up -d
+            # Roda seed do backend (idempotente) para garantir usuário admin padrão
+            docker compose exec -T backend node dist/seed.js || echo "Seed falhou (pode já ter rodado)"
             docker image prune -f
