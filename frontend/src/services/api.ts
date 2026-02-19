@@ -1,13 +1,13 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-let API_BASE_URL = 'http://localhost:3001';
-
-// Em runtime (navegador), aponta sempre para :3001 no mesmo host da página
-if (typeof window !== 'undefined') {
-    const { protocol, hostname } = window.location;
-    API_BASE_URL = `${protocol}//${hostname}:3001`;
-}
+// Para ambiente de produção atual na VPS:
+// Frontend:  http://62.171.139.44:3000
+// Backend:   http://62.171.139.44:3001
+//
+// Em desenvolvimento local você pode sobrescrever com NEXT_PUBLIC_API_URL.
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || 'http://62.171.139.44:3001';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
