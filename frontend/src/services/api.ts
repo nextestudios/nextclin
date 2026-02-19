@@ -1,12 +1,13 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    (typeof window !== 'undefined'
-        ? // em produção: assume frontend em :3000 e backend em :3001 no mesmo host
-          window.location.origin.replace(':3000', ':3001')
-        : 'http://localhost:3001');
+let API_BASE_URL = 'http://localhost:3001';
+
+// Em runtime (navegador), aponta sempre para :3001 no mesmo host da página
+if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    API_BASE_URL = `${protocol}//${hostname}:3001`;
+}
 
 const api = axios.create({
     baseURL: API_BASE_URL,
