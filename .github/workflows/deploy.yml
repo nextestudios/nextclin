@@ -56,6 +56,15 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" | tail -1 | grep -q "END" && echo "✓ Rodapé END encontrado" || echo "❌ Rodapé END não encontrado"
           echo "Linhas na chave: $(echo '${{ secrets.VPS_SSH_KEY }}' | wc -l)"
 
+      - name: Copy docker-compose.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "docker-compose.yml"
+          target: "/home/deploy/nextclinic"
+
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -68,6 +77,7 @@ jobs:
             cd /home/deploy/nextclinic
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose pull
+            docker compose down --remove-orphans
             docker compose up -d
             # Roda seed do backend (idempotente) para garantir usuário admin padrão
             docker compose exec -T backend node dist/seed.js || echo "Seed falhou (pode já ter rodado)"
