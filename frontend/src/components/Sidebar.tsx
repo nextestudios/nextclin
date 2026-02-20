@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import {
     Activity, Users, Calendar, Stethoscope, Syringe,
     PackageSearch, DollarSign, FileText, UserPlus,
-    Building2, MapPin, LogOut, Settings, ScrollText
+    Building2, MapPin, LogOut, Settings, ScrollText, Bell
 } from 'lucide-react';
 
 const menuGroups = [
@@ -41,6 +41,7 @@ const menuGroups = [
             { label: 'Unidades', href: '/dashboard/units', icon: MapPin },
             { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
             { label: 'Auditoria', href: '/dashboard/audit', icon: ScrollText },
+            { label: 'Notificações', href: '/dashboard/notifications', icon: Bell },
         ]
     }
 ];

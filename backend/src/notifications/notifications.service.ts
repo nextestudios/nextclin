@@ -9,6 +9,7 @@ import { Batch } from '../vaccines/entities/batch.entity';
 import { Vaccine } from '../vaccines/entities/vaccine.entity';
 import { Application } from '../attendances/entities/application.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
+import { MessagingService } from './messaging.service';
 
 @Injectable()
 export class NotificationsService {
@@ -29,6 +30,7 @@ export class NotificationsService {
         private auditRepo: Repository<AuditLog>,
         @InjectRepository(Vaccine)
         private vaccinesRepo: Repository<Vaccine>,
+        private readonly messagingService: MessagingService,
     ) { }
 
     // Run every day at 8:00 AM — appointment reminders (24h before)
@@ -53,6 +55,13 @@ export class NotificationsService {
 
         for (const appt of filtered) {
             this.logger.log(`[REMINDER] Appointment ${appt.id} for patient ${appt.patient?.name || appt.patientId} at ${appt.startTime}`);
+            // Send real WhatsApp notification
+            if (appt.patient?.phone) {
+                const dateStr = new Date(appt.startTime).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                await this.messagingService.sendAppointmentReminder(
+                    appt.patient.phone, appt.patient.name, dateStr, appt.tenantId, appt.id,
+                );
+            }
             await this.logNotification(appt.tenantId, 'APPOINTMENT_REMINDER_24H', 'appointment', appt.id);
         }
         this.logger.log(`[JOB] Sent ${filtered.length} appointment reminders.`);
