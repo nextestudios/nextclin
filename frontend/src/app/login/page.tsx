@@ -78,7 +78,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="relative z-10 text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} NextEstudios. Todos os direitos reservados.
+                    &copy; {new Date().getFullYear()} Next Vision. Todos os direitos reservados.
                 </div>
             </div>
 
