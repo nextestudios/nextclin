@@ -24,7 +24,7 @@ services:
     image: ghcr.io/nextestudios/nextclinic:latest
     container_name: nextclinic
     ports:
-      - "3000:80"
+      - "3000:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
