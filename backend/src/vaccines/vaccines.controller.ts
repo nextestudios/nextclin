@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { VaccinesService } from './vaccines.service';
 
@@ -30,5 +30,15 @@ export class VaccinesController {
     @Get('batches/expiring')
     getExpiring(@Request() req: any, @Query('days') days = '30') {
         return this.vaccinesService.getExpiringBatches(req.user.tenantIds?.[0], parseInt(days));
+    }
+
+    @Put(':id')
+    update(@Request() req: any, @Param('id') id: string, @Body() dto: any) {
+        return this.vaccinesService.updateVaccine(req.user.tenantIds?.[0], id, dto);
+    }
+
+    @Delete(':id')
+    remove(@Request() req: any, @Param('id') id: string) {
+        return this.vaccinesService.deleteVaccine(req.user.tenantIds?.[0], id);
     }
 }

@@ -3,6 +3,7 @@ import {
     UpdateDateColumn, DeleteDateColumn, Index, OneToMany,
 } from 'typeorm';
 import { Attendance } from '../../attendances/entities/attendance.entity';
+import { Appointment } from '../../appointments/entities/appointment.entity';
 
 @Entity('patients')
 @Index(['tenantId', 'cpf'], { unique: true, where: '"cpf" IS NOT NULL' })
@@ -61,6 +62,9 @@ export class Patient {
 
     @OneToMany(() => Attendance, (a) => a.patient)
     attendances: Attendance[];
+
+    @OneToMany(() => Appointment, (a) => a.patient)
+    appointments: Appointment[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

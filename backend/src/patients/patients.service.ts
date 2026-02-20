@@ -46,7 +46,12 @@ export class PatientsService {
     async findOne(tenantId: string, id: string): Promise<Patient | null> {
         return this.patientsRepo.findOne({
             where: { id, tenantId },
-            relations: ['attendances'],
+            relations: [
+                'attendances',
+                'attendances.applications',
+                'attendances.applications.batch',
+                'appointments',
+            ],
         });
     }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '../../../services/api';
-import { Syringe, Plus, X, CheckCircle2, Box, Info } from 'lucide-react';
+import { Syringe, Plus, X, CheckCircle2, Box, Info, Trash2 } from 'lucide-react';
 
 interface Vaccine { id: string; name: string; manufacturer: string; totalDoses: number; salePrice: number; batches: any[] }
 
@@ -121,8 +121,17 @@ export default function VaccinesPage() {
                                     <Box size={12} />
                                     {v.batches?.length || 0} lote(s) ativo(s)
                                 </div>
-                                <div className="text-xs font-medium text-slate-500">
-                                    Esquema: {v.totalDoses} dose(s)
+                                <div className="flex items-center gap-2">
+                                    <div className="text-xs font-medium text-slate-500">
+                                        Esquema: {v.totalDoses} dose(s)
+                                    </div>
+                                    <button
+                                        onClick={async () => { if (confirm(`Remover vacina "${v.name}"?`)) { await api.delete(`/vaccines/${v.id}`); loadVaccines(); } }}
+                                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Excluir"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                         </div>

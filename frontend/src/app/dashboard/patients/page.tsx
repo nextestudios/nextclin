@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '../../../services/api';
-import { Users, Plus, X, Search, FileText } from 'lucide-react';
+import { Users, Plus, X, Search, FileText, Eye, Edit, Trash2 } from 'lucide-react';
 
 export default function PatientsPage() {
     const [patients, setPatients] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState('');
+    const router = useRouter();
     const [form, setForm] = useState({
         name: '', cpf: '', birthDate: '', gender: '', phone: '', email: '',
         address: '', city: '', state: '', zipCode: '',
@@ -186,6 +188,7 @@ export default function PatientsPage() {
                                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">CPF</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Contato</th>
                                     <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cidade/UF</th>
+                                    <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 bg-white">
@@ -213,6 +216,19 @@ export default function PatientsPage() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                                 {p.city ? `${p.city} ${p.state ? '- ' + p.state : ''}` : '—'}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button onClick={() => router.push(`/dashboard/patients/${p.id}`)} className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-sm transition-colors" title="Ver Prontuário">
+                                                        <Eye size={16} />
+                                                    </button>
+                                                    <button onClick={() => router.push(`/dashboard/patients/${p.id}`)} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-sm transition-colors" title="Editar">
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button onClick={async () => { if (confirm('Tem certeza que deseja excluir este paciente?')) { await api.delete(`/patients/${p.id}`); loadPatients(); } }} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-sm transition-colors" title="Excluir">
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

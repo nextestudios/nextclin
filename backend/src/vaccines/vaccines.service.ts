@@ -33,6 +33,15 @@ export class VaccinesService {
         return this.batchesRepo.find({ where: { tenantId, vaccineId } });
     }
 
+    async updateVaccine(tenantId: string, id: string, dto: any): Promise<Vaccine> {
+        await this.vaccinesRepo.update({ id, tenantId }, dto);
+        return this.vaccinesRepo.findOne({ where: { id, tenantId } }) as Promise<Vaccine>;
+    }
+
+    async deleteVaccine(tenantId: string, id: string): Promise<void> {
+        await this.vaccinesRepo.update({ id, tenantId }, { active: false });
+    }
+
     async getExpiringBatches(tenantId: string, daysAhead: number): Promise<Batch[]> {
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + daysAhead);
