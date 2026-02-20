@@ -62,6 +62,9 @@ export class Appointment {
     @Column({ name: 'displacement_fee', type: 'decimal', precision: 10, scale: 2, nullable: true })
     displacementFee: number;
 
+    @Column({ name: 'home_visit_checklist', type: 'json', nullable: true })
+    homeVisitChecklist: { item: string; checked: boolean }[];
+
     @Column({ type: 'text', nullable: true })
     notes: string;
 
