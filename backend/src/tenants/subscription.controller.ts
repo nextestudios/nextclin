@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subscription, PlanTier } from './entities/subscription.entity';
+import { PlanConfig } from '../admin/entities/plan-config.entity';
 
 @Controller('subscription')
 @UseGuards(AuthGuard('jwt'))
@@ -10,6 +11,8 @@ export class SubscriptionController {
     constructor(
         @InjectRepository(Subscription)
         private subsRepo: Repository<Subscription>,
+        @InjectRepository(PlanConfig)
+        private planConfigsRepo: Repository<PlanConfig>,
     ) { }
 
     @Get()
@@ -35,8 +38,10 @@ export class SubscriptionController {
     }
 
     @Get('plans')
-    getPlans() {
-        return [
+    async getPlans() {
+        const dbConfigs = await this.planConfigsRepo.find();
+
+        const defaults = [
             {
                 tier: 'FREE',
                 name: 'Gratuito',
@@ -60,5 +65,25 @@ export class SubscriptionController {
                 limits: { maxPatients: 99999, maxUnits: 99, maxProfessionals: 99999 },
             },
         ];
+
+        return defaults.map(def => {
+            const dbConf = dbConfigs.find(c => c.plan === def.tier);
+            if (dbConf) {
+                return {
+                    tier: dbConf.plan,
+                    name: dbConf.name,
+                    price: dbConf.price,
+                    features: dbConf.features || def.features,
+                    limits: {
+                        maxPatients: dbConf.maxPatients ?? def.limits.maxPatients,
+                        maxUnits: dbConf.maxUnits ?? def.limits.maxUnits,
+                        maxProfessionals: dbConf.maxProfessionals ?? def.limits.maxProfessionals,
+                    },
+                    popular: def.tier === 'PRO',
+                };
+            }
+            return def;
+        });
     }
 }
+

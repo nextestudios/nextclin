@@ -14,9 +14,10 @@ import { Professional } from './entities/professional.entity';
 import { Insurance } from './entities/insurance.entity';
 import { Unit } from './entities/unit.entity';
 import { Subscription } from './entities/subscription.entity';
+import { PlanConfig } from '../admin/entities/plan-config.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Tenant, Professional, Insurance, Unit, Subscription])],
+    imports: [TypeOrmModule.forFeature([Tenant, Professional, Insurance, Unit, Subscription, PlanConfig])],
     controllers: [TenantsController, ProfessionalsController, InsurancesController, UnitsController, SubscriptionController],
     providers: [TenantsService, ProfessionalsService, InsurancesService, UnitsService],
     exports: [TenantsService, ProfessionalsService, InsurancesService, UnitsService],
