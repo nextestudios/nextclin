@@ -24,13 +24,17 @@ export class AuthService {
         return null;
     }
 
-    async login(user: User) {
+    async login(user: User, unitId?: string) {
+        const tenantIds = user.tenants ? user.tenants.map(t => t.id) : [];
+
         const payload = {
             email: user.email,
             sub: user.id,
             role: user.role,
-            tenantIds: user.tenants ? user.tenants.map(t => t.id) : []
+            tenantIds,
+            unitId: unitId || null,
         };
+
         return {
             access_token: this.jwtService.sign(payload),
             user: {
@@ -38,8 +42,9 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                tenants: user.tenants
-            }
+                tenants: user.tenants,
+                selectedUnitId: unitId || null,
+            },
         };
     }
 }

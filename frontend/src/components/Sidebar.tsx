@@ -15,6 +15,7 @@ const menuItems = [
     { label: 'NFSe', href: '/dashboard/nfse', icon: '📄' },
     { label: 'Profissionais', href: '/dashboard/professionals', icon: '👩‍⚕️' },
     { label: 'Convênios', href: '/dashboard/insurances', icon: '🏢' },
+    { label: 'Unidades', href: '/dashboard/units', icon: '🏛️' },
 ];
 
 export default function Sidebar() {

@@ -6,6 +6,7 @@ import { Appointment, AppointmentStatus } from '../appointments/entities/appoint
 import { AccountReceivable, PaymentStatus } from '../financial/entities/account-receivable.entity';
 import { AccountPayable, PayableStatus } from '../financial/entities/account-payable.entity';
 import { Batch } from '../vaccines/entities/batch.entity';
+import { Application } from '../attendances/entities/application.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 
 @Injectable()
@@ -21,6 +22,8 @@ export class NotificationsService {
         private apRepo: Repository<AccountPayable>,
         @InjectRepository(Batch)
         private batchesRepo: Repository<Batch>,
+        @InjectRepository(Application)
+        private applicationsRepo: Repository<Application>,
         @InjectRepository(AuditLog)
         private auditRepo: Repository<AuditLog>,
     ) { }
@@ -46,7 +49,6 @@ export class NotificationsService {
         const filtered = upcoming.filter(a => new Date(a.startTime) < tomorrowEnd);
 
         for (const appt of filtered) {
-            // TODO: Integrate with WhatsApp/SMS/Email provider
             this.logger.log(`[REMINDER] Appointment ${appt.id} for patient ${appt.patient?.name || appt.patientId} at ${appt.startTime}`);
             await this.logNotification(appt.tenantId, 'APPOINTMENT_REMINDER_24H', 'appointment', appt.id);
         }
@@ -114,6 +116,56 @@ export class NotificationsService {
             this.logger.warn(`[BATCH ${urgency}] ${batch.vaccine?.name || 'Vacina'} lote ${batch.lotNumber}: vence em ${daysUntil} dias (${batch.expiryDate}), qtd: ${batch.quantityAvailable}`);
         }
         this.logger.log(`[JOB] Found ${expiring.length} expiring batches.`);
+    }
+
+    // Run every day at 9:00 AM — next dose reminders (7 days before)
+    @Cron(CronExpression.EVERY_DAY_AT_9AM)
+    async sendNextDoseReminders() {
+        this.logger.log('[JOB] Checking next dose reminders (7 days ahead)...');
+        const sevenDaysLater = new Date();
+        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+        const sevenDaysStr = sevenDaysLater.toISOString().split('T')[0];
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        const dueApplications = await this.applicationsRepo.createQueryBuilder('app')
+            .where('app.next_dose_date IS NOT NULL')
+            .andWhere('app.next_dose_date BETWEEN :today AND :sevenDays', { today: todayStr, sevenDays: sevenDaysStr })
+            .getMany();
+
+        for (const app of dueApplications) {
+            this.logger.log(`[NEXT DOSE] Application ${app.id}: next dose on ${app.nextDoseDate} for patient attendance ${app.attendanceId}`);
+            await this.logNotification(app.tenantId, 'NEXT_DOSE_REMINDER_7D', 'application', app.id);
+
+            // Auto-create appointment suggestion if not already existing
+            const existingAppt = await this.appointmentsRepo.findOne({
+                where: {
+                    tenantId: app.tenantId,
+                    vaccineId: app.vaccineId,
+                    status: In([AppointmentStatus.REQUESTED, AppointmentStatus.CONFIRMED]),
+                },
+            });
+
+            if (!existingAppt) {
+                const suggestedAppt = this.appointmentsRepo.create({
+                    tenantId: app.tenantId,
+                    patientId: (app as any).patientId || '',
+                    professionalId: app.professionalId,
+                    unitId: app.tenantId,
+                    vaccineId: app.vaccineId,
+                    startTime: new Date(app.nextDoseDate!),
+                    endTime: new Date(new Date(app.nextDoseDate!).getTime() + 30 * 60 * 1000),
+                    status: AppointmentStatus.REQUESTED,
+                    notes: `Agendamento automático: próxima dose (aplicação ${app.id})`,
+                });
+                try {
+                    await this.appointmentsRepo.save(suggestedAppt);
+                    this.logger.log(`[AUTO-SCHEDULE] Created appointment for next dose of application ${app.id}`);
+                } catch (err: any) {
+                    this.logger.warn(`[AUTO-SCHEDULE] Could not create appointment: ${err.message}`);
+                }
+            }
+        }
+        this.logger.log(`[JOB] Processed ${dueApplications.length} next dose reminders.`);
     }
 
     private async logNotification(tenantId: string, action: string, entityType: string, entityId: string) {
