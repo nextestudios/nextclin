@@ -22,6 +22,11 @@ export class VaccinesController {
         return this.vaccinesService.createBatch(req.user.tenantIds?.[0], dto);
     }
 
+    @Get('batches')
+    findAllBatches(@Request() req: any) {
+        return this.vaccinesService.findAllBatches(req.user.tenantIds?.[0]);
+    }
+
     @Get(':vaccineId/batches')
     findBatches(@Request() req: any, @Param('vaccineId') vaccineId: string) {
         return this.vaccinesService.findBatchesByVaccine(req.user.tenantIds?.[0], vaccineId);

@@ -29,6 +29,10 @@ export class VaccinesService {
         return Array.isArray(saved) ? saved[0] : saved;
     }
 
+    async findAllBatches(tenantId: string): Promise<Batch[]> {
+        return this.batchesRepo.find({ where: { tenantId }, relations: ['vaccine'], order: { expiryDate: 'ASC' } });
+    }
+
     async findBatchesByVaccine(tenantId: string, vaccineId: string): Promise<Batch[]> {
         return this.batchesRepo.find({ where: { tenantId, vaccineId } });
     }
