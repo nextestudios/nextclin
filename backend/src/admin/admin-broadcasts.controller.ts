@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { SuperAdminGuard } from './admin.guard';
+import { Public } from '../auth/public.decorator';
 
 interface BroadcastRecord {
     id: string;
@@ -13,6 +14,7 @@ interface BroadcastRecord {
 const broadcastHistory: BroadcastRecord[] = [];
 
 @Controller('admin/broadcasts')
+@Public()
 @UseGuards(SuperAdminGuard)
 export class AdminBroadcastsController {
 

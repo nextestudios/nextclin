@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Put, Body, Param, UseGuards } from '@nestjs/com
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SuperAdminGuard } from './admin.guard';
+import { Public } from '../auth/public.decorator';
 import { Subscription, PlanTier } from '../tenants/entities/subscription.entity';
 import { PlanConfig } from './entities/plan-config.entity';
 
@@ -21,6 +22,7 @@ const PLAN_DEFAULTS: Record<PlanTier, any> = {
 };
 
 @Controller('admin/plans')
+@Public()
 @UseGuards(SuperAdminGuard)
 export class AdminPlansController {
     constructor(

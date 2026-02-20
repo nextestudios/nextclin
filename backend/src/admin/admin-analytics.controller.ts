@@ -2,12 +2,14 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SuperAdminGuard } from './admin.guard';
+import { Public } from '../auth/public.decorator';
 import { Tenant } from '../tenants/entities/tenant.entity';
 import { Subscription } from '../tenants/entities/subscription.entity';
 import { Attendance } from '../attendances/entities/attendance.entity';
 import { MessageLog } from '../notifications/entities/message-log.entity';
 
 @Controller('admin/analytics')
+@Public()
 @UseGuards(SuperAdminGuard)
 export class AdminAnalyticsController {
     constructor(

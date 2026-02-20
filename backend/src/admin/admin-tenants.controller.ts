@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Post, Body, Param, UseGuards, NotFoundException
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SuperAdminGuard } from './admin.guard';
+import { Public } from '../auth/public.decorator';
 import { Tenant } from '../tenants/entities/tenant.entity';
 import { Subscription } from '../tenants/entities/subscription.entity';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -9,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 @Controller('admin/tenants')
+@Public()
 @UseGuards(SuperAdminGuard)
 export class AdminTenantsController {
     constructor(
