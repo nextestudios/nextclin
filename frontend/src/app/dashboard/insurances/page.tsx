@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import { ShieldCheck, Plus, X, Handshake, ShieldBan, CheckCircle2 } from 'lucide-react';
 
 interface Insurance {
     id: string;
@@ -36,74 +37,114 @@ export default function InsurancesPage() {
     };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Convênios / Operadoras</h1>
-                <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    {showForm ? 'Cancelar' : '+ Novo Convênio'}
+        <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-6 saas-card">
+                <div className="flex items-center gap-3">
+                    <div className="bg-teal-100 p-2 text-teal-700 rounded-sm">
+                        <ShieldCheck size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Operadoras & Convênios de Saúde</h1>
+                        <p className="text-slate-500 text-sm mt-1">Gestão de carteira credenciada e regras de precificação ANS</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    className={showForm ? "saas-button-secondary" : "saas-button-primary"}
+                >
+                    {showForm ? <><X size={18} /> Cancelar Cadastro</> : <><Plus size={18} /> Homologar Convênio</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nome *</label>
-                            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Unimed, SulAmérica..." />
+                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4 flex items-center gap-2">
+                        <Handshake size={20} className="text-teal-600" />
+                        Nova Entidade Parceira
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2">
+                            <label className="saas-label">Razão Social / Nome Fantasia *</label>
+                            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="saas-input" placeholder="Ex: SulAmérica Saúde, Bradesco Saúde..." />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Código ANS</label>
-                            <input value={form.ansCode} onChange={e => setForm({ ...form, ansCode: e.target.value })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="000000" />
+                            <label className="saas-label">Registro Agência Nac. (ANS)</label>
+                            <input value={form.ansCode} onChange={e => setForm({ ...form, ansCode: e.target.value })} className="saas-input font-mono" placeholder="000000" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Desconto (%)</label>
-                            <input type="number" min="0" max="100" step="0.5" value={form.discountPercent}
-                                onChange={e => setForm({ ...form, discountPercent: Number(e.target.value) })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                            <label className="saas-label">Markup / Desconto Pactuado (%)</label>
+                            <div className="relative">
+                                <input type="number" min="0" max="100" step="0.5" value={form.discountPercent} onChange={e => setForm({ ...form, discountPercent: Number(e.target.value) })} className="saas-input font-bold" />
+                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400">%</div>
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                        Salvar Convênio
-                    </button>
+                    <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+                        <button type="submit" className="saas-button-primary">
+                            <CheckCircle2 size={18} /> Homologar Parceiro
+                        </button>
+                    </div>
                 </form>
             )}
 
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Nome</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Código ANS</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Desconto</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Status</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {insurances.length === 0 ? (
-                            <tr><td colSpan={5} className="text-center py-8 text-slate-400">Nenhum convênio cadastrado.</td></tr>
-                        ) : insurances.map(ins => (
-                            <tr key={ins.id} className="border-t border-slate-100 hover:bg-slate-50">
-                                <td className="px-4 py-3 font-medium text-slate-800">{ins.name}</td>
-                                <td className="px-4 py-3 text-slate-600">{ins.ansCode || '—'}</td>
-                                <td className="px-4 py-3 text-slate-600">{ins.discountPercent}%</td>
-                                <td className="px-4 py-3">
-                                    <span className={`text-xs px-2 py-1 rounded-full ${ins.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {ins.active ? 'Ativo' : 'Inativo'}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {ins.active && (
-                                        <button onClick={() => handleDeactivate(ins.id)}
-                                            className="text-red-600 hover:text-red-800 text-sm">Desativar</button>
-                                    )}
-                                </td>
+            <div className="saas-card overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Identidade da Operadora</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Normativa ANS</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Acordo Financeiro</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Contrato Ativo</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Descredenciamento</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                            {insurances.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-16 text-center text-slate-400">
+                                        <ShieldCheck size={48} className="mx-auto mb-4 opacity-20" />
+                                        <p className="font-medium text-lg text-slate-500">Nenhuma operadora ou convênio homologado.</p>
+                                    </td>
+                                </tr>
+                            ) : insurances.map(ins => (
+                                <tr key={ins.id} className="hover:bg-slate-50/70 transition-colors group">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="font-bold text-slate-900 text-base">{ins.name}</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {ins.ansCode ? (
+                                            <span className="font-mono text-sm bg-slate-100 px-2 py-1 rounded-sm border border-slate-200 text-slate-700 tracking-wider font-semibold">
+                                                ANS - {ins.ansCode}
+                                            </span>
+                                        ) : <span className="text-slate-400">—</span>}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <span className="font-black text-emerald-600 tracking-tight text-lg">{ins.discountPercent}%</span>
+                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold mt-0.5">Off Tabela Particular</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-1.5 rounded-sm border ${ins.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                                            {ins.active ? 'Vigente' : 'Descredenciado'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right flex justify-end">
+                                        {ins.active ? (
+                                            <button
+                                                onClick={() => handleDeactivate(ins.id)}
+                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
+                                            >
+                                                <ShieldBan size={14} /> Suspender
+                                            </button>
+                                        ) : (
+                                            <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400 mr-2">Sem Cobertura</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

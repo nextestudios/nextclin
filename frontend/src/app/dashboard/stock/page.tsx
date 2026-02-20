@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import {
+    PackageSearch, PackagePlus, PackageMinus,
+    ArrowDownLeft, ArrowUpRight, CheckCircle2,
+    X, Plus
+} from 'lucide-react';
 
 interface Movement {
     id: string;
@@ -14,8 +19,8 @@ interface Movement {
 }
 
 const reasonLabels: Record<string, string> = {
-    PURCHASE: 'Compra', RETURN: 'Devolução', APPLICATION: 'Aplicação',
-    LOSS: 'Perda', EXPIRED: 'Vencido', ADJUSTMENT: 'Ajuste',
+    PURCHASE: 'Compra/Aquisição', RETURN: 'Devolução de Cliente', APPLICATION: 'Aplicação/Uso Clínico',
+    LOSS: 'Perda/Dano', EXPIRED: 'Vencimento', ADJUSTMENT: 'Ajuste de Inventário',
 };
 
 export default function StockPage() {
@@ -46,93 +51,169 @@ export default function StockPage() {
     };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Controle de Estoque</h1>
-                <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                    {showForm ? 'Cancelar' : '+ Nova Movimentação'}
+        <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-6 saas-card">
+                <div className="flex items-center gap-3">
+                    <div className="bg-teal-100 p-2 text-teal-700 rounded-sm">
+                        <PackageSearch size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Controle de Estoque</h1>
+                        <p className="text-slate-500 text-sm mt-1">Registro de entradas e saídas de lotes da câmara fria</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    className={showForm ? "saas-button-secondary" : "saas-button-primary"}
+                >
+                    {showForm ? <><X size={18} /> Cancelar Operação</> : <><Plus size={18} /> Nova Operação</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2 flex gap-4">
-                        <button type="button" onClick={() => { setFormType('ENTRY'); setForm({ ...form, reason: 'PURCHASE' }); }}
-                            className={`px-4 py-2 rounded-lg font-medium ${formType === 'ENTRY' ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                            ➕ Entrada
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${formType === 'ENTRY' ? 'border-t-emerald-600' : 'border-t-rose-600'}`}>
+                    <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4">
+                        Detalhes da Operação de Estoque
+                    </h3>
+
+                    {/* Operation Type Switch */}
+                    <div className="flex gap-4 mb-8 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                        <button
+                            type="button"
+                            onClick={() => { setFormType('ENTRY'); setForm({ ...form, reason: 'PURCHASE' }); }}
+                            className={`flex-1 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-2 transition-all ${formType === 'ENTRY'
+                                    ? 'bg-emerald-600 text-white shadow-md'
+                                    : 'text-slate-500 hover:bg-slate-200'
+                                }`}
+                        >
+                            <PackagePlus size={18} /> Entrada de Lote
                         </button>
-                        <button type="button" onClick={() => { setFormType('EXIT'); setForm({ ...form, reason: 'LOSS' }); }}
-                            className={`px-4 py-2 rounded-lg font-medium ${formType === 'EXIT' ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                            ➖ Saída
+                        <button
+                            type="button"
+                            onClick={() => { setFormType('EXIT'); setForm({ ...form, reason: 'LOSS' }); }}
+                            className={`flex-1 py-3 px-4 rounded-sm font-semibold flex items-center justify-center gap-2 transition-all ${formType === 'EXIT'
+                                    ? 'bg-rose-600 text-white shadow-md'
+                                    : 'text-slate-500 hover:bg-slate-200'
+                                }`}
+                        >
+                            <PackageMinus size={18} /> Saída/Baixa de Lote
                         </button>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Lote *</label>
-                        <select value={form.batchId} onChange={e => setForm({ ...form, batchId: e.target.value })} required
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-black">
-                            <option value="">Selecione um lote</option>
-                            {batches.map((b: any) => <option key={b.id} value={b.id}>{b.lotNumber} - {b.vaccine?.name || 'Vacina'} (Disp: {b.quantityAvailable})</option>)}
-                        </select>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="lg:col-span-2">
+                            <label className="saas-label">Selecionar Lote Físico *</label>
+                            <select value={form.batchId} onChange={e => setForm({ ...form, batchId: e.target.value })} required className="saas-input">
+                                <option value="">Procure por Lote ou Vacina</option>
+                                {batches.map((b: any) => (
+                                    <option key={b.id} value={b.id}>
+                                        (Lote: {b.lotNumber}) {b.vaccine?.name} — {b.quantityAvailable} em estoque
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="saas-label">Quantidade *</label>
+                            <div className="relative">
+                                <input type="number" min="1" value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} required className="saas-input font-bold text-lg" />
+                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-slate-400 text-sm font-medium">doses</div>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="saas-label">Classificação (Motivo) *</label>
+                            <select value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} className="saas-input uppercase text-xs font-bold tracking-wider">
+                                {formType === 'ENTRY' ? (
+                                    <>
+                                        <option value="PURCHASE">Aquisição de Fornecedor</option>
+                                        <option value="RETURN">Devolução Comercial</option>
+                                        <option value="ADJUSTMENT">Ajuste de Contagem (+)</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="LOSS">Avaria / Quebra</option>
+                                        <option value="EXPIRED">Vencimento em Geladeira</option>
+                                        <option value="APPLICATION">Uso Extra/Excepcional</option>
+                                        <option value="ADJUSTMENT">Ajuste de Contagem (-)</option>
+                                    </>
+                                )}
+                            </select>
+                        </div>
+                        <div className="md:col-span-2 lg:col-span-4">
+                            <label className="saas-label">Justificativa / Observações</label>
+                            <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="saas-input" placeholder="Anexar detalhes, nota fiscal ou explicação da perda..." />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Quantidade *</label>
-                        <input type="number" min="1" value={form.quantity} onChange={e => setForm({ ...form, quantity: Number(e.target.value) })} required
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-black" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Motivo</label>
-                        <select value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-black">
-                            {formType === 'ENTRY' ? (
-                                <><option value="PURCHASE">Compra</option><option value="RETURN">Devolução</option><option value="ADJUSTMENT">Ajuste</option></>
-                            ) : (
-                                <><option value="LOSS">Perda</option><option value="EXPIRED">Vencido</option><option value="ADJUSTMENT">Ajuste</option></>
-                            )}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Observações</label>
-                        <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-black" placeholder="Notas" />
-                    </div>
-                    <div className="md:col-span-2">
-                        <button type="submit" className={`text-white px-6 py-2 rounded-lg transition-colors ${formType === 'ENTRY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                            Registrar {formType === 'ENTRY' ? 'Entrada' : 'Saída'}
+
+                    <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+                        <button type="submit" className={`text-white px-8 py-3 rounded-sm font-semibold transition-colors flex items-center gap-2 shadow-sm ${formType === 'ENTRY' ? 'bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-600/20' : 'bg-rose-600 hover:bg-rose-700 focus:ring-4 focus:ring-rose-600/20'
+                            }`}>
+                            <CheckCircle2 size={20} />
+                            Confirmar {formType === 'ENTRY' ? 'Entrada' : 'Baixa'} de {form.quantity} Doses
                         </button>
                     </div>
                 </form>
             )}
 
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Tipo</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Lote</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Motivo</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Qtd</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Data</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {movements.map(m => (
-                            <tr key={m.id} className="border-t border-slate-100 hover:bg-slate-50">
-                                <td className="px-4 py-3">
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${m.type === 'ENTRY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {m.type === 'ENTRY' ? '⬆ Entrada' : '⬇ Saída'}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3 text-slate-800">{m.batch?.lotNumber || '-'}</td>
-                                <td className="px-4 py-3 text-slate-600">{reasonLabels[m.reason] || m.reason}</td>
-                                <td className="px-4 py-3 font-medium text-slate-800">{m.quantity}</td>
-                                <td className="px-4 py-3 text-slate-500 text-sm">{new Date(m.createdAt).toLocaleDateString('pt-BR')}</td>
+            <div className="saas-card overflow-hidden">
+                <div className="p-4 bg-slate-50 border-b border-slate-200 font-bold text-slate-700 text-sm tracking-tight">
+                    Histórico de Movimentações
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Operação</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Lote — Vacina</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Volumetria</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Data/Hora</th>
                             </tr>
-                        ))}
-                        {movements.length === 0 && (
-                            <tr><td colSpan={5} className="text-center py-8 text-slate-400">Nenhuma movimentação registrada.</td></tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                            {movements.map(m => (
+                                <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className={`inline-flex flex-col text-center px-3 py-1.5 rounded-sm border ${m.type === 'ENTRY'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                                            }`}>
+                                            <div className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider relative">
+                                                {m.type === 'ENTRY' ? (
+                                                    <><ArrowDownLeft size={12} strokeWidth={3} /> Entrada</>
+                                                ) : (
+                                                    <><ArrowUpRight size={12} strokeWidth={3} /> Saída</>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-mono font-semibold text-sm text-slate-800">{m.batch?.lotNumber || 'LOTE DESCONHECIDO'}</div>
+                                        <div className="text-xs text-slate-500 truncate max-w-[250px] mt-0.5">{m.batch?.vaccine?.name || 'Vacina Removida'}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                        {reasonLabels[m.reason] || m.reason}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <span className={`font-bold text-lg ${m.type === 'ENTRY' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                            {m.type === 'ENTRY' ? '+' : '-'}{m.quantity}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right font-medium">
+                                        {new Date(m.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </td>
+                                </tr>
+                            ))}
+                            {movements.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                        <PackageSearch size={40} className="mx-auto mb-3 opacity-20" />
+                                        Nenhuma movimentação de estoque registrada.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

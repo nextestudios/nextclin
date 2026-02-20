@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
+import {
+    Users, Plus, X, Stethoscope,
+    BriefcaseMedical, Settings2, Mail, Phone,
+    ShieldBan, CheckCircle2
+} from 'lucide-react';
 
 interface Professional {
     id: string;
@@ -37,99 +42,129 @@ export default function ProfessionalsPage() {
         loadProfessionals();
     };
 
-    const typeLabels: Record<string, string> = {
-        DOCTOR: '👨‍⚕️ Médico',
-        NURSE: '👩‍⚕️ Enfermeiro(a)',
-        TECHNICIAN: '🔧 Técnico(a)',
-    };
-
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-slate-800">Profissionais</h1>
-                <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-                    {showForm ? 'Cancelar' : '+ Novo Profissional'}
+        <div className="space-y-6">
+            <div className="flex justify-between items-center bg-white p-6 saas-card">
+                <div className="flex items-center gap-3">
+                    <div className="bg-teal-100 p-2 text-teal-700 rounded-sm">
+                        <Users size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Equipe Clínica & Profissionais</h1>
+                        <p className="text-slate-500 text-sm mt-1">Gestão de médicos, enfermeiros e técnicos vinculados à instituição</p>
+                    </div>
+                </div>
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    className={showForm ? "saas-button-secondary" : "saas-button-primary"}
+                >
+                    {showForm ? <><X size={18} /> Cancelar Cadastro</> : <><Plus size={18} /> Cadastrar Profissional</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4">
+                        Perfil do Colaborador
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nome *</label>
-                            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <label className="saas-label">Nome Completo (Identidade Civil) *</label>
+                            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="saas-input" placeholder="Ex: Dra. Ana Silva" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Tipo *</label>
-                            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                <option value="DOCTOR">Médico</option>
-                                <option value="NURSE">Enfermeiro(a)</option>
-                                <option value="TECHNICIAN">Técnico(a)</option>
+                            <label className="saas-label">Atribuição / Cargo Técnico *</label>
+                            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="saas-input">
+                                <option value="DOCTOR">Médico(a) Especialista</option>
+                                <option value="NURSE">Enfermeiro(a) Padrão</option>
+                                <option value="TECHNICIAN">Técnico(a) em Enfermagem</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Nº Conselho</label>
-                            <input value={form.councilNumber} onChange={e => setForm({ ...form, councilNumber: e.target.value })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="CRM/COREN" />
+                            <label className="saas-label">Registro do Conselho de Classe (CRM/COREN)</label>
+                            <input value={form.councilNumber} onChange={e => setForm({ ...form, councilNumber: e.target.value })} className="saas-input font-mono uppercase" placeholder="UF-000000" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
-                            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                            <label className="saas-label">Telefone Corporativo / Plantão</label>
+                            <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="saas-input" placeholder="(00) 00000-0000" />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                                className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" />
+                            <label className="saas-label">E-mail Institucional</label>
+                            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="saas-input" placeholder="nome@clinica.com.br" />
                         </div>
                     </div>
-                    <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                        Salvar Profissional
-                    </button>
+                    <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
+                        <button type="submit" className="saas-button-primary">
+                            <CheckCircle2 size={18} /> Efetivar Registro
+                        </button>
+                    </div>
                 </form>
             )}
 
-            <div className="bg-white rounded-xl shadow overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Nome</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Tipo</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Conselho</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Contato</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Status</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-slate-600">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {professionals.length === 0 ? (
-                            <tr><td colSpan={6} className="text-center py-8 text-slate-400">Nenhum profissional cadastrado.</td></tr>
-                        ) : professionals.map(p => (
-                            <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                                <td className="px-4 py-3 font-medium text-slate-800">{p.name}</td>
-                                <td className="px-4 py-3 text-slate-600">{typeLabels[p.type] || p.type}</td>
-                                <td className="px-4 py-3 text-slate-600">{p.councilNumber || '—'}</td>
-                                <td className="px-4 py-3 text-slate-600">
-                                    {p.phone && <span className="block">{p.phone}</span>}
-                                    {p.email && <span className="block text-xs text-slate-400">{p.email}</span>}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className={`text-xs px-2 py-1 rounded-full ${p.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {p.active ? 'Ativo' : 'Inativo'}
-                                    </span>
-                                </td>
-                                <td className="px-4 py-3">
-                                    {p.active && (
-                                        <button onClick={() => handleDeactivate(p.id)}
-                                            className="text-red-600 hover:text-red-800 text-sm">Desativar</button>
-                                    )}
-                                </td>
+            <div className="saas-card overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Identidade Profissional</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Cargo Técnico</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Número Conselho</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Meios de Contato</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Governança</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                            {professionals.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-16 text-center text-slate-400">
+                                        <Users size={48} className="mx-auto mb-4 opacity-20" />
+                                        <p className="font-medium text-lg text-slate-500">O quadro de profissionais clínicos está vazio.</p>
+                                    </td>
+                                </tr>
+                            ) : professionals.map(p => (
+                                <tr key={p.id} className="hover:bg-slate-50/70 transition-colors group">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-sm bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                                                {p.type === 'DOCTOR' ? <Stethoscope size={20} /> : p.type === 'NURSE' ? <BriefcaseMedical size={20} /> : <Settings2 size={20} />}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-900">{p.name}</div>
+                                                <span className={`text-[10px] mt-1 uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border ${p.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                                                    {p.active ? 'Ativo no Sistema' : 'Vínculo Encerrado'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-600">
+                                        {p.type === 'DOCTOR' ? 'Médico(a)' : p.type === 'NURSE' ? 'Enfermeiro(a)' : 'Técnico(a)'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {p.councilNumber ? (
+                                            <span className="font-mono text-sm bg-slate-100 px-2 py-1 rounded-sm border border-slate-200 text-slate-700">{p.councilNumber}</span>
+                                        ) : <span className="text-slate-400">—</span>}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        {p.phone && <div className="flex items-center gap-1.5 text-sm text-slate-600 mb-1"><Phone size={14} className="opacity-50" /> {p.phone}</div>}
+                                        {p.email && <div className="flex items-center gap-1.5 text-xs text-slate-500"><Mail size={12} className="opacity-50" /> {p.email}</div>}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        {p.active ? (
+                                            <button
+                                                onClick={() => handleDeactivate(p.id)}
+                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 ml-auto shadow-sm"
+                                            >
+                                                <ShieldBan size={14} /> Revogar Acesso
+                                            </button>
+                                        ) : (
+                                            <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400">Revogado</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

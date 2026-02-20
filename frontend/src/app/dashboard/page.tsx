@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import {
+    Activity, Users, Syringe, Clock,
+    Banknote, CheckCircle, AlertTriangle, XCircle,
+    TrendingUp, PieChart as PieChartIcon, Calendar, Package
+} from 'lucide-react';
 
 const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
@@ -30,7 +35,7 @@ interface AttendanceStats {
     waitingCount: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+const DASHBOARD_COLORS = ['#0f766e', '#0369a1', '#b45309', '#be123c', '#4338ca', '#1d4ed8'];
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -64,81 +69,157 @@ export default function DashboardPage() {
     ] : [];
 
     return (
-        <div>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-800">Olá, {user?.name || 'Usuário'} 👋</h1>
-                <p className="text-slate-500">Bem-vindo ao NextClin — Painel de Controle</p>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Painel de Controle</h1>
+                    <p className="text-slate-500 text-sm mt-1">Resumo operacional e financeiro da NextClin</p>
+                </div>
             </div>
 
             {/* Attendance Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white">
-                    <p className="text-sm opacity-80">Atendimentos Hoje</p>
-                    <p className="text-3xl font-bold mt-1">{attendanceStats?.totalToday ?? '—'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div className="saas-card p-5 border-l-4 border-l-teal-600">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Atendimentos Hoje</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{attendanceStats?.totalToday ?? '—'}</p>
+                        </div>
+                        <div className="bg-teal-50 p-2 rounded-sm text-teal-600">
+                            <Activity size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white">
-                    <p className="text-sm opacity-80">Finalizados Hoje</p>
-                    <p className="text-3xl font-bold mt-1">{attendanceStats?.completedToday ?? '—'}</p>
+
+                <div className="saas-card p-5 border-l-4 border-l-emerald-500">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Finalizados</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{attendanceStats?.completedToday ?? '—'}</p>
+                        </div>
+                        <div className="bg-emerald-50 p-2 rounded-sm text-emerald-600">
+                            <CheckCircle size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white">
-                    <p className="text-sm opacity-80">Vacinas Aplicadas Hoje</p>
-                    <p className="text-3xl font-bold mt-1">{attendanceStats?.applicationsToday ?? '—'}</p>
+
+                <div className="saas-card p-5 border-l-4 border-l-indigo-500">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Vacinas Aplicadas</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{attendanceStats?.applicationsToday ?? '—'}</p>
+                        </div>
+                        <div className="bg-indigo-50 p-2 rounded-sm text-indigo-600">
+                            <Syringe size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-5 text-white">
-                    <p className="text-sm opacity-80">Na Fila Agora</p>
-                    <p className="text-3xl font-bold mt-1">{attendanceStats?.waitingCount ?? '—'}</p>
+
+                <div className="saas-card p-5 border-l-4 border-l-amber-500">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Na Fila</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{attendanceStats?.waitingCount ?? '—'}</p>
+                        </div>
+                        <div className="bg-amber-50 p-2 rounded-sm text-amber-600">
+                            <Clock size={20} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Financial Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl shadow p-5 border-l-4 border-blue-500">
-                    <p className="text-sm text-slate-500">A Receber (Aberto)</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">{formatCurrency(financialStats?.totalReceivable || 0)}</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div className="saas-card p-5">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">A Receber</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{formatCurrency(financialStats?.totalReceivable || 0)}</p>
+                        </div>
+                        <div className="bg-blue-50 p-2 rounded-sm text-blue-600">
+                            <Banknote size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white rounded-xl shadow p-5 border-l-4 border-green-500">
-                    <p className="text-sm text-slate-500">Recebido</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">{formatCurrency(financialStats?.totalReceived || 0)}</p>
+
+                <div className="saas-card p-5">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recebido</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{formatCurrency(financialStats?.totalReceived || 0)}</p>
+                        </div>
+                        <div className="bg-green-50 p-2 rounded-sm text-green-600">
+                            <Banknote size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white rounded-xl shadow p-5 border-l-4 border-red-500">
-                    <p className="text-sm text-slate-500">A Pagar</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">{formatCurrency(financialStats?.totalPayable || 0)}</p>
+
+                <div className="saas-card p-5">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">A Pagar</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{formatCurrency(financialStats?.totalPayable || 0)}</p>
+                        </div>
+                        <div className="bg-red-50 p-2 rounded-sm text-red-600">
+                            <Banknote size={20} />
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white rounded-xl shadow p-5 border-l-4 border-yellow-500">
-                    <p className="text-sm text-slate-500">Inadimplentes</p>
-                    <p className="text-2xl font-bold text-slate-800 mt-1">{financialStats?.overdueCount ?? '—'}</p>
+
+                <div className="saas-card p-5">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inadimplentes</p>
+                            <p className="text-2xl font-bold text-slate-800 mt-2">{financialStats?.overdueCount ?? '—'}</p>
+                        </div>
+                        <div className="bg-rose-50 p-2 rounded-sm text-rose-600">
+                            <AlertTriangle size={20} />
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Financial Bar Chart */}
-                <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">💰 Fluxo Financeiro</h2>
+                <div className="saas-card p-6">
+                    <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                        <TrendingUp size={20} className="text-slate-400" />
+                        <h2 className="text-base font-semibold text-slate-800">Fluxo Financeiro</h2>
+                    </div>
                     {financialChartData.length > 0 ? (
                         <div style={{ width: '100%', height: 250 }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={financialChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis />
-                                    <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
-                                    <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={80} />
+                                    <Tooltip
+                                        formatter={(v: any) => formatCurrency(Number(v))}
+                                        cursor={{ fill: '#f8fafc' }}
+                                        contentStyle={{ borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
+                                    <Bar dataKey="valor" radius={[2, 2, 0, 0]} maxBarSize={50}>
                                         {financialChartData.map((_, i) => (
-                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                            <Cell key={i} fill={DASHBOARD_COLORS[i % DASHBOARD_COLORS.length]} />
                                         ))}
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     ) : (
-                        <p className="text-slate-400 text-center py-8">Carregando dados...</p>
+                        <div className="h-[250px] flex items-center justify-center">
+                            <p className="text-slate-400 text-sm">Carregando métricas financeiras...</p>
+                        </div>
                     )}
                 </div>
 
                 {/* Attendance Pie Chart */}
-                <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">🏥 Atendimentos Hoje</h2>
+                <div className="saas-card p-6">
+                    <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                        <PieChartIcon size={20} className="text-slate-400" />
+                        <h2 className="text-base font-semibold text-slate-800">Atendimentos por Categoria</h2>
+                    </div>
                     {attendanceChartData.some(d => d.value > 0) ? (
                         <div style={{ width: '100%', height: 250 }}>
                             <ResponsiveContainer width="100%" height="100%">
@@ -147,94 +228,131 @@ export default function DashboardPage() {
                                         data={attendanceChartData.filter(d => d.value > 0)}
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={60}
+                                        innerRadius={70}
                                         outerRadius={90}
+                                        paddingAngle={2}
                                         dataKey="value"
-                                        label={({ name, value }: any) => `${name}: ${value}`}
+                                        label={({ name, value }: any) => `${name} (${value})`}
+                                        labelLine={false}
                                     >
                                         {attendanceChartData.map((_, i) => (
-                                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                            <Cell key={i} fill={DASHBOARD_COLORS[i % DASHBOARD_COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
                     ) : (
-                        <p className="text-slate-400 text-center py-8">Sem atendimentos hoje</p>
+                        <div className="h-[250px] flex items-center justify-center">
+                            <p className="text-slate-400 text-sm">Nenhum dado de atendimento hoje.</p>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Bottom Row: Appointments + Low Stock */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
                 {/* Upcoming Appointments */}
-                <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">📅 Próximos Agendamentos</h2>
-                    {upcomingAppointments.length === 0 ? (
-                        <p className="text-slate-400 text-center py-4">Nenhum agendamento próximo.</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {upcomingAppointments.map((a: any) => (
-                                <div key={a.id} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-blue-100 text-blue-700 rounded-lg px-3 py-1 text-sm font-medium text-center min-w-[60px]">
-                                            {a.startTime ? new Date(a.startTime).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '--'}
-                                            <br />
-                                            <span className="text-xs">
-                                                {a.startTime ? new Date(a.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                                            </span>
+                <div className="saas-card flex flex-col">
+                    <div className="p-6 border-b border-slate-100 flex items-center gap-2">
+                        <Calendar size={20} className="text-slate-400" />
+                        <h2 className="text-base font-semibold text-slate-800">Próximos Agendamentos</h2>
+                    </div>
+                    <div className="p-0 flex-1">
+                        {upcomingAppointments.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400 text-sm">Nenhum agendamento próximo.</div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {upcomingAppointments.map((a: any) => (
+                                    <div key={a.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex flex-col items-center justify-center bg-slate-100 text-slate-700 rounded-sm w-12 h-12">
+                                                <span className="text-sm font-bold leading-none">
+                                                    {a.startTime ? new Date(a.startTime).toLocaleDateString('pt-BR', { day: '2-digit' }) : '--'}
+                                                </span>
+                                                <span className="text-[10px] font-medium uppercase mt-1">
+                                                    {a.startTime ? new Date(a.startTime).toLocaleDateString('pt-BR', { month: 'short' }) : '--'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-900">{a.patient?.name || 'Paciente'}</p>
+                                                <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
+                                                    <Clock size={12} />
+                                                    <span>{a.startTime ? new Date(a.startTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
+                                                    <span className="mx-1">•</span>
+                                                    <span>{a.type === 'HOME' ? 'Domiciliar' : 'Clínica'}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div>
-                                            <p className="font-medium text-slate-800">{a.patient?.name || 'Paciente'}</p>
-                                            <p className="text-sm text-slate-500">{a.type === 'HOME' ? '🏠 Domiciliar' : '🏥 Clínica'}</p>
+                                            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-sm ${a.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                    a.status === 'REQUESTED' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                                        'bg-slate-100 text-slate-600 border border-slate-200'
+                                                }`}>
+                                                {a.status === 'CONFIRMED' ? 'Confirmado' : a.status === 'REQUESTED' ? 'Solicitado' : a.status}
+                                            </span>
                                         </div>
                                     </div>
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${a.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-700' :
-                                        a.status === 'REQUESTED' ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-gray-100 text-gray-600'
-                                        }`}>
-                                        {a.status === 'CONFIRMED' ? 'Confirmado' : a.status === 'REQUESTED' ? 'Solicitado' : a.status}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Low Stock Alerts + Stock Summary */}
-                <div className="bg-white rounded-xl shadow p-6">
-                    <h2 className="text-lg font-semibold text-slate-800 mb-4">📦 Alertas de Estoque</h2>
-                    {stockSummary && (
-                        <div className="grid grid-cols-3 gap-3 mb-4">
-                            <div className="bg-blue-50 rounded-lg p-3 text-center">
-                                <p className="text-2xl font-bold text-blue-600">{stockSummary.totalDoses || 0}</p>
-                                <p className="text-xs text-slate-500">Doses válidas</p>
-                            </div>
-                            <div className="bg-green-50 rounded-lg p-3 text-center">
-                                <p className="text-2xl font-bold text-green-600">{stockSummary.validBatches || 0}</p>
-                                <p className="text-xs text-slate-500">Lotes válidos</p>
-                            </div>
-                            <div className="bg-red-50 rounded-lg p-3 text-center">
-                                <p className="text-2xl font-bold text-red-600">{stockSummary.expiredBatches || 0}</p>
-                                <p className="text-xs text-slate-500">Lotes vencidos</p>
-                            </div>
-                        </div>
-                    )}
-                    {lowStock.length === 0 ? (
-                        <p className="text-green-600 text-center py-2">✅ Nenhuma vacina abaixo do estoque mínimo</p>
-                    ) : (
-                        <div className="space-y-2">
-                            {lowStock.map((v: any) => (
-                                <div key={v.vaccineId} className="flex items-center justify-between bg-red-50 rounded-lg px-4 py-2">
-                                    <span className="font-medium text-red-800">{v.vaccineName}</span>
-                                    <span className="text-sm text-red-600">
-                                        {v.totalStock} / {v.minimumStock} mínimo
-                                    </span>
+                <div className="saas-card flex flex-col">
+                    <div className="p-6 border-b border-slate-100 flex items-center gap-2">
+                        <Package size={20} className="text-slate-400" />
+                        <h2 className="text-base font-semibold text-slate-800">Situação do Estoque</h2>
+                    </div>
+
+                    <div className="p-6">
+                        {stockSummary && (
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                                <div className="bg-slate-50 rounded-sm p-4 text-center border border-slate-100">
+                                    <p className="text-2xl font-bold text-slate-800">{stockSummary.totalDoses || 0}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mt-1">Doses Válidas</p>
                                 </div>
-                            ))}
+                                <div className="bg-emerald-50 rounded-sm p-4 text-center border border-emerald-100">
+                                    <p className="text-2xl font-bold text-emerald-700">{stockSummary.validBatches || 0}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 mt-1">Lotes OK</p>
+                                </div>
+                                <div className="bg-rose-50 rounded-sm p-4 text-center border border-rose-100">
+                                    <p className="text-2xl font-bold text-rose-700">{stockSummary.expiredBatches || 0}</p>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wider text-rose-600 mt-1">Vencidos</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Estoque Baixo</h3>
+                            {lowStock.length === 0 ? (
+                                <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-sm border border-emerald-100">
+                                    <CheckCircle size={16} />
+                                    <span className="text-sm font-medium">Estoque normal para todas as vacinas.</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {lowStock.map((v: any) => (
+                                        <div key={v.vaccineId} className="flex items-center justify-between bg-white border border-rose-200 rounded-sm px-4 py-3 shadow-sm shadow-rose-100/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-rose-100 p-1.5 rounded-sm text-rose-600">
+                                                    <AlertTriangle size={16} />
+                                                </div>
+                                                <span className="text-sm font-medium text-slate-800">{v.vaccineName}</span>
+                                            </div>
+                                            <div className="text-xs font-semibold px-2 py-1 bg-rose-50 text-rose-700 rounded-sm border border-rose-200">
+                                                {v.totalStock} / {v.minimumStock} min
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

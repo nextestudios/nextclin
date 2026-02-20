@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { Activity, ShieldCheck, Zap, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
     const { signIn } = useAuth();
@@ -17,71 +18,137 @@ export default function LoginPage() {
         try {
             await signIn({ email, password });
         } catch (err) {
-            setError('Falha no login. Verifique suas credenciais.');
+            setError('Credenciais inválidas. Verifique os dados informados.');
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl"></div>
-            </div>
+        <div className="min-h-screen flex bg-slate-50">
+            {/* Left Panel - Branding */}
+            <div className="hidden lg:flex flex-col flex-1 bg-slate-900 text-white p-12 relative overflow-hidden">
+                {/* Abstract corporate geometric background */}
+                <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
 
-            <div className="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-2xl shadow-2xl w-[420px]">
-                <div className="text-center mb-8">
-                    <div className="text-5xl mb-3">💉</div>
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-                        NextClin
-                    </h1>
-                    <p className="text-slate-400 text-sm mt-1">Gestão de Clínicas de Vacinação</p>
+                <div className="absolute -top-24 -left-24 w-96 h-96 bg-teal-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div className="relative z-10 flex items-center gap-3">
+                    <div className="bg-teal-600 p-2.5 rounded-sm">
+                        <Activity size={28} strokeWidth={2.5} />
+                    </div>
+                    <span className="text-2xl font-bold tracking-tight">NextClin</span>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="seu@email.com"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1.5">Senha</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
+                <div className="relative z-10 flex-1 flex flex-col justify-center max-w-lg mt-12">
+                    <h1 className="text-4xl font-bold leading-tight mb-6">
+                        Gestão clínica eficiente, <span className="text-teal-400">padronizada</span> e <span className="text-teal-400">integrada</span>.
+                    </h1>
+                    <p className="text-slate-400 text-lg mb-12">
+                        O sistema corporativo definitivo para controle de vacinação, prontuários, faturamento e NFSe.
+                    </p>
 
-                    {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                            <p className="text-red-400 text-sm text-center">{error}</p>
+                    <div className="space-y-6">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-white/10 p-2 rounded-sm mt-1">
+                                <ShieldCheck size={20} className="text-teal-400" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Alta Disponibilidade</h3>
+                                <p className="text-sm text-slate-400">Arquitetura multi-tenant desenhada para operação contínua 24/7.</p>
+                            </div>
                         </div>
-                    )}
+                        <div className="flex items-start gap-4">
+                            <div className="bg-white/10 p-2 rounded-sm mt-1">
+                                <Zap size={20} className="text-teal-400" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-white">Processamento Assíncrono</h3>
+                                <p className="text-sm text-slate-400">Filas de alta performance para emissão de Notas Fiscais e alertas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
-                                Entrando...
-                            </span>
-                        ) : 'Entrar'}
-                    </button>
-                </form>
+                <div className="relative z-10 text-sm text-slate-500">
+                    &copy; {new Date().getFullYear()} NextEstudios. Todos os direitos reservados.
+                </div>
+            </div>
+
+            {/* Right Panel - Form */}
+            <div className="flex-1 flex flex-col justify-center items-center p-6 lg:p-12 relative bg-white">
+                <div className="w-full max-w-sm">
+                    <div className="mb-10 lg:hidden flex items-center gap-3 justify-center">
+                        <div className="bg-teal-600 p-2 text-white rounded-sm">
+                            <Activity size={24} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-2xl font-bold text-slate-900 tracking-tight">NextClin</span>
+                    </div>
+
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Acesso ao Sistema</h2>
+                        <p className="text-slate-500 mt-2 text-sm">Insira suas credenciais corporativas para continuar.</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail corporativo</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="saas-input"
+                                placeholder="nome@clinica.com.br"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                                <label className="block text-sm font-medium text-slate-700">Senha</label>
+                            </div>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="saas-input"
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
+
+                        {error && (
+                            <div className="p-3 bg-red-50 border-l-2 border-red-500 text-sm text-red-700">
+                                {error}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-2.5 px-4 transition-colors flex justify-center items-center gap-2"
+                            style={{ borderRadius: '2px' }} // inline as fallback, should use saas-button but explicit is safer here
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 size={18} className="animate-spin" />
+                                    <span>Autenticando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Entrar no Workspace</span>
+                                    <ArrowRight size={18} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );
