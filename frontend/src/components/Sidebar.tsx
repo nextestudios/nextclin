@@ -13,6 +13,8 @@ const menuItems = [
     { label: 'Estoque', href: '/dashboard/stock', icon: '📦' },
     { label: 'Financeiro', href: '/dashboard/financial', icon: '💰' },
     { label: 'NFSe', href: '/dashboard/nfse', icon: '📄' },
+    { label: 'Profissionais', href: '/dashboard/professionals', icon: '👩‍⚕️' },
+    { label: 'Convênios', href: '/dashboard/insurances', icon: '🏢' },
 ];
 
 export default function Sidebar() {

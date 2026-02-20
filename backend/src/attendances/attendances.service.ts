@@ -7,6 +7,7 @@ import { StockService } from '../stock/stock.service';
 import { MovementReason } from '../stock/entities/stock-movement.entity';
 import { Vaccine } from '../vaccines/entities/vaccine.entity';
 import { FinancialService } from '../financial/financial.service';
+import { AuditLogService } from '../common/audit-log.service';
 
 @Injectable()
 export class AttendancesService {
@@ -19,6 +20,7 @@ export class AttendancesService {
         private vaccinesRepo: Repository<Vaccine>,
         private stockService: StockService,
         private financialService: FinancialService,
+        private auditLogService: AuditLogService,
     ) { }
 
     async create(tenantId: string, dto: any): Promise<Attendance> {
