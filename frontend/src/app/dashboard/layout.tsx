@@ -2,18 +2,34 @@
 
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, loading, user } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
             router.push('/login');
         }
     }, [loading, isAuthenticated, router]);
+
+    const getBreadcrumb = () => {
+        if (pathname === '/dashboard') return 'Visão Geral';
+        if (pathname.includes('/patients')) return 'Pacientes';
+        if (pathname.includes('/appointments')) return 'Agenda';
+        if (pathname.includes('/attendance')) return 'Atendimento';
+        if (pathname.includes('/vaccines')) return 'Vacinas';
+        if (pathname.includes('/stock')) return 'Estoque';
+        if (pathname.includes('/professionals')) return 'Profissionais';
+        if (pathname.includes('/insurances')) return 'Convênios';
+        if (pathname.includes('/financial')) return 'Faturamento';
+        if (pathname.includes('/nfse')) return 'Notas Fiscais (NFS-e)';
+        if (pathname.includes('/units')) return 'Unidades';
+        return 'Visão Geral';
+    };
 
     if (loading || !isAuthenticated) {
         return (
@@ -35,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className="flex items-center text-sm text-slate-500">
                         <span className="font-medium text-slate-800">Workspace</span>
                         <span className="mx-2">/</span>
-                        <span>Visão Geral</span>
+                        <span>{getBreadcrumb()}</span>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -50,8 +66,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </header>
 
                 {/* Main Content Area */}
-                <main className="flex-1 p-8">
-                    {children}
+                <main className="flex-1 p-8 overflow-x-hidden">
+                    <div className="max-w-7xl mx-auto w-full">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>
