@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsService } from './notifications.service';
+import { MessagingService } from './messaging.service';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { AccountReceivable } from '../financial/entities/account-receivable.entity';
 import { AccountPayable } from '../financial/entities/account-payable.entity';
@@ -14,7 +15,7 @@ import { AuditLog } from '../common/entities/audit-log.entity';
         ScheduleModule.forRoot(),
         TypeOrmModule.forFeature([Appointment, AccountReceivable, AccountPayable, Batch, Application, AuditLog]),
     ],
-    providers: [NotificationsService],
-    exports: [NotificationsService],
+    providers: [NotificationsService, MessagingService],
+    exports: [NotificationsService, MessagingService],
 })
 export class NotificationsModule { }
