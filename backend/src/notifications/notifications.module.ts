@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsService } from './notifications.service';
 import { MessagingService } from './messaging.service';
+import { NotificationQueue } from './notification-queue.service';
 import { MessageLogsController } from './message-logs.controller';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { AccountReceivable } from '../financial/entities/account-receivable.entity';
@@ -22,7 +23,7 @@ import { MessageLog } from './entities/message-log.entity';
         ]),
     ],
     controllers: [MessageLogsController],
-    providers: [NotificationsService, MessagingService],
-    exports: [NotificationsService, MessagingService],
+    providers: [NotificationsService, MessagingService, NotificationQueue],
+    exports: [NotificationsService, MessagingService, NotificationQueue],
 })
 export class NotificationsModule { }
