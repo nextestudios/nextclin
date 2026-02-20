@@ -6,6 +6,7 @@ import { Appointment, AppointmentStatus } from '../appointments/entities/appoint
 import { AccountReceivable, PaymentStatus } from '../financial/entities/account-receivable.entity';
 import { AccountPayable, PayableStatus } from '../financial/entities/account-payable.entity';
 import { Batch } from '../vaccines/entities/batch.entity';
+import { Vaccine } from '../vaccines/entities/vaccine.entity';
 import { Application } from '../attendances/entities/application.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 
@@ -26,6 +27,8 @@ export class NotificationsService {
         private applicationsRepo: Repository<Application>,
         @InjectRepository(AuditLog)
         private auditRepo: Repository<AuditLog>,
+        @InjectRepository(Vaccine)
+        private vaccinesRepo: Repository<Vaccine>,
     ) { }
 
     // Run every day at 8:00 AM — appointment reminders (24h before)
@@ -116,6 +119,25 @@ export class NotificationsService {
             this.logger.warn(`[BATCH ${urgency}] ${batch.vaccine?.name || 'Vacina'} lote ${batch.lotNumber}: vence em ${daysUntil} dias (${batch.expiryDate}), qtd: ${batch.quantityAvailable}`);
         }
         this.logger.log(`[JOB] Found ${expiring.length} expiring batches.`);
+    }
+
+    // Run every day at 7:00 AM — low stock check
+    @Cron('0 0 7 * * *')
+    async checkLowStock() {
+        this.logger.log('[JOB] Checking low stock vaccines...');
+        const vaccines = await this.vaccinesRepo.find({
+            where: { active: true },
+            relations: ['batches'],
+        });
+
+        for (const vaccine of vaccines) {
+            const totalAvailable = (vaccine.batches || []).reduce(
+                (sum: number, b: any) => sum + (Number(b.quantityAvailable) || 0), 0
+            );
+            if (totalAvailable < vaccine.minimumStock) {
+                this.logger.warn(`[⚠️ ESTOQUE BAIXO] ${vaccine.name}: ${totalAvailable} un. disponíveis (mínimo: ${vaccine.minimumStock})`);
+            }
+        }
     }
 
     // Run every day at 9:00 AM — next dose reminders (7 days before)

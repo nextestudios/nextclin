@@ -42,6 +42,19 @@ export class VaccinesService {
         await this.vaccinesRepo.update({ id, tenantId }, { active: false });
     }
 
+    async getLowStockVaccines(tenantId: string): Promise<any[]> {
+        const vaccines = await this.vaccinesRepo.find({
+            where: { tenantId, active: true },
+            relations: ['batches'],
+        });
+        return vaccines
+            .map(v => {
+                const totalAvailable = (v.batches || []).reduce((sum, b) => sum + (Number(b.quantityAvailable) || 0), 0);
+                return { ...v, totalAvailable };
+            })
+            .filter(v => v.totalAvailable < v.minimumStock);
+    }
+
     async getExpiringBatches(tenantId: string, daysAhead: number): Promise<Batch[]> {
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + daysAhead);

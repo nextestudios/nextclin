@@ -7,13 +7,14 @@ import { Appointment } from '../appointments/entities/appointment.entity';
 import { AccountReceivable } from '../financial/entities/account-receivable.entity';
 import { AccountPayable } from '../financial/entities/account-payable.entity';
 import { Batch } from '../vaccines/entities/batch.entity';
+import { Vaccine } from '../vaccines/entities/vaccine.entity';
 import { Application } from '../attendances/entities/application.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 
 @Module({
     imports: [
         ScheduleModule.forRoot(),
-        TypeOrmModule.forFeature([Appointment, AccountReceivable, AccountPayable, Batch, Application, AuditLog]),
+        TypeOrmModule.forFeature([Appointment, AccountReceivable, AccountPayable, Batch, Vaccine, Application, AuditLog]),
     ],
     providers: [NotificationsService, MessagingService],
     exports: [NotificationsService, MessagingService],

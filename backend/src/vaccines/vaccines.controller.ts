@@ -27,6 +27,11 @@ export class VaccinesController {
         return this.vaccinesService.findBatchesByVaccine(req.user.tenantIds?.[0], vaccineId);
     }
 
+    @Get('alerts/low-stock')
+    getLowStock(@Request() req: any) {
+        return this.vaccinesService.getLowStockVaccines(req.user.tenantIds?.[0]);
+    }
+
     @Get('batches/expiring')
     getExpiring(@Request() req: any, @Query('days') days = '30') {
         return this.vaccinesService.getExpiringBatches(req.user.tenantIds?.[0], parseInt(days));
