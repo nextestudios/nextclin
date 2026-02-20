@@ -1,48 +1,65 @@
-import { Check, Syringe, Shield, Users, Calendar, BarChart3, Smartphone, Star, ArrowRight, Zap } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import Link from 'next/link';
+import { createElement } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-async function getCmsConfig() {
+async function getLandingData() {
   try {
-    const res = await fetch(`${API}/admin/landing-cms`, { cache: 'no-store' });
-    if (!res.ok) return null;
-    return await res.json();
+    const [cmsRes, plansRes] = await Promise.all([
+      fetch(`${API}/admin/landing-cms`, { cache: 'no-store' }),
+      fetch(`${API}/public/plans`, { cache: 'no-store' })
+    ]);
+    const cms = cmsRes.ok ? await cmsRes.json() : null;
+    const plans = plansRes.ok ? await plansRes.json() : [];
+    return { cms, plans };
   } catch {
-    return null;
+    return { cms: null, plans: [] };
   }
 }
 
-const FEATURE_LIST = [
-  { icon: Calendar, title: 'Agendamento Inteligente', desc: 'Online, domiciliar e presencial com bloqueio de horários e fila de espera' },
-  { icon: Syringe, title: 'Controle de Vacinas', desc: 'Lotes, validades, cadeia de frio e alertas automáticos de reposição' },
-  { icon: Shield, title: 'LGPD e Segurança', desc: 'Termos de consentimento, RBAC, MFA e auditoria completa' },
-  { icon: BarChart3, title: 'Dashboard Assistencial', desc: 'Cobertura vacinal, taxa de no-show e tendências mensais' },
-  { icon: Smartphone, title: 'WhatsApp Integrado', desc: 'Lembretes automáticos, próxima dose e confirmação de presença' },
-  { icon: Users, title: 'Multi-tenant', desc: 'Cada clínica isolada, múltiplas unidades e profissionais por tenant' },
+const DEFAULT_FEATURE_LIST = [
+  { icon: 'Calendar', title: 'Agendamento Inteligente', desc: 'Online, domiciliar e presencial com bloqueio de horários e fila de espera' },
+  { icon: 'Syringe', title: 'Controle de Vacinas', desc: 'Lotes, validades, cadeia de frio e alertas automáticos de reposição' },
+  { icon: 'Shield', title: 'LGPD e Segurança', desc: 'Termos de consentimento, RBAC, MFA e auditoria completa' },
+  { icon: 'BarChart3', title: 'Dashboard Assistencial', desc: 'Cobertura vacinal, taxa de no-show e tendências mensais' },
+  { icon: 'Smartphone', title: 'WhatsApp Integrado', desc: 'Lembretes automáticos, próxima dose e confirmação de presença' },
+  { icon: 'Users', title: 'Multi-tenant', desc: 'Cada clínica isolada, múltiplas unidades e profissionais por tenant' },
 ];
 
 export default async function LandingPage() {
-  const cms = await getCmsConfig();
+  const { cms, plans } = await getLandingData();
   const hero = cms?.hero || {};
   const pricing = cms?.pricing || {};
   const cta = cms?.cta || {};
   const features = cms?.features || {};
 
-  const plans = [
-    {
-      name: 'Gratuito', price: pricing.free_price || 'R$ 0', period: '/mês',
-      features: ['1 unidade', '50 pacientes', '3 profissionais', 'Agendamentos', 'Controle de estoque'],
-    },
-    {
-      name: 'Profissional', price: pricing.pro_price || 'R$ 297', period: '/mês', popular: true,
-      features: ['Unidades ilimitadas', 'Pacientes ilimitados', '10 profissionais', 'WhatsApp automático', 'NFSe integrada', 'Portal do Paciente', 'Dashboard assistencial'],
-    },
-    {
-      name: 'Enterprise', price: pricing.enterprise_price || 'R$ 697', period: '/mês',
-      features: ['Tudo do Pro', 'Profissionais ilimitados', 'API pública', 'White-label', 'SSO/SAML', 'Gestor de conta dedicado'],
-    },
-  ];
+  let featureList = DEFAULT_FEATURE_LIST;
+  if (features.features_list) {
+    try {
+      featureList = JSON.parse(features.features_list);
+      if (!Array.isArray(featureList) || featureList.length === 0) {
+        featureList = DEFAULT_FEATURE_LIST;
+      }
+    } catch {
+      // Use fallback
+    }
+  }
+
+  // Pre-process plans to map to our UI
+  const displayPlans = plans.map((p: any) => ({
+    name: p.name,
+    price: p.price === 0 ? 'R$ 0' : `R$ ${p.price}`,
+    period: '/mês',
+    popular: p.plan === 'PRO',
+    features: p.features || [],
+  }));
+
+  // Render dynamic icon from Lucide
+  const RenderIcon = ({ name, className, size = 20 }: { name: string, className?: string, size?: number }) => {
+    const IconComponent = (Icons as any)[name] || Icons.Star;
+    return createElement(IconComponent, { size, className });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -51,7 +68,7 @@ export default async function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-teal-600/20 to-blue-600/10" />
         <nav className="relative max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Syringe className="text-teal-400" size={28} />
+            <Icons.Syringe className="text-teal-400" size={28} />
             <span className="text-xl font-bold">NextClin</span>
           </div>
           <div className="flex items-center gap-6">
@@ -64,7 +81,7 @@ export default async function LandingPage() {
         </nav>
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-32 text-center">
           <div className="inline-flex items-center gap-2 bg-teal-600/20 border border-teal-500/30 rounded-full px-4 py-1.5 text-sm text-teal-300 mb-6">
-            <Zap size={14} /> {hero.badge || 'SaaS para Clínicas de Vacinação'}
+            <Icons.Zap size={14} /> {hero.badge || 'SaaS para Clínicas de Vacinação'}
           </div>
           <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
             {hero.title_line1 || 'Gestão completa para'}<br />
@@ -77,7 +94,7 @@ export default async function LandingPage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/login" className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-500 transition-all hover:shadow-lg hover:shadow-teal-500/25 flex items-center gap-2">
-              {hero.cta_primary || 'Começar grátis'} <ArrowRight size={18} />
+              {hero.cta_primary || 'Começar grátis'} <Icons.ArrowRight size={18} />
             </Link>
             <a href="#pricing" className="border border-slate-600 text-slate-300 px-6 py-3 rounded-lg font-semibold hover:border-slate-400 hover:text-white transition">
               {hero.cta_secondary || 'Ver planos'}
@@ -93,18 +110,15 @@ export default async function LandingPage() {
           <p className="text-slate-400 max-w-lg mx-auto">{features.subtitle || 'Sistema completo para gestão de clínicas de vacinação.'}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {FEATURE_LIST.map(f => {
-            const Icon = f.icon;
-            return (
-              <div key={f.title} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-teal-500/30 transition-all group">
-                <div className="w-10 h-10 rounded-lg bg-teal-600/20 flex items-center justify-center mb-4 group-hover:bg-teal-600/30 transition">
-                  <Icon size={20} className="text-teal-400" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                <p className="text-sm text-slate-400">{f.desc}</p>
+          {featureList.map(f => (
+            <div key={f.title} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-teal-500/30 transition-all group">
+              <div className="w-10 h-10 rounded-lg bg-teal-600/20 flex items-center justify-center mb-4 group-hover:bg-teal-600/30 transition">
+                <RenderIcon name={f.icon} className="text-teal-400" />
               </div>
-            );
-          })}
+              <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
+              <p className="text-sm text-slate-400">{f.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -115,13 +129,13 @@ export default async function LandingPage() {
           <p className="text-slate-400">{pricing.subtitle || 'Comece grátis, escale quando precisar.'}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {plans.map(plan => (
-            <div key={plan.name} className={`rounded-xl p-8 transition-all ${plan.popular
+          {displayPlans.map((plan: any) => (
+            <div key={plan.name} className={`rounded-xl p-8 transition-all flex flex-col ${plan.popular
               ? 'bg-gradient-to-b from-teal-600/20 to-slate-800 border-2 border-teal-500 shadow-lg shadow-teal-500/10 relative'
               : 'bg-slate-800/50 border border-slate-700/50 hover:border-slate-600'}`}>
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal-600 text-white text-xs px-3 py-1 rounded-full font-medium flex items-center gap-1">
-                  <Star size={10} /> Mais popular
+                  <Icons.Star size={10} /> Mais popular
                 </div>
               )}
               <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
@@ -129,10 +143,10 @@ export default async function LandingPage() {
                 <span className="text-4xl font-bold">{plan.price}</span>
                 <span className="text-slate-400 text-sm">{plan.period}</span>
               </div>
-              <ul className="space-y-3 mb-8">
-                {plan.features.map(f => (
+              <ul className="space-y-3 mb-8 flex-1">
+                {plan.features.map((f: string) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
-                    <Check size={14} className="text-teal-400 flex-shrink-0" /> {f}
+                    <Icons.Check size={14} className="text-teal-400 flex-shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
@@ -143,6 +157,11 @@ export default async function LandingPage() {
               </Link>
             </div>
           ))}
+          {displayPlans.length === 0 && (
+            <div className="col-span-3 text-center text-slate-500 py-10">
+              Nenhum plano configurado no sistema.
+            </div>
+          )}
         </div>
       </section>
 
@@ -152,7 +171,7 @@ export default async function LandingPage() {
           <h2 className="text-3xl font-bold mb-4">{cta.title || 'Sua clínica merece o melhor'}</h2>
           <p className="text-slate-300 mb-8">{cta.subtitle || '14 dias grátis. Sem cartão de crédito. Configure em minutos.'}</p>
           <Link href="/login" className="inline-flex items-center gap-2 bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-teal-500 transition-all hover:shadow-lg hover:shadow-teal-500/25">
-            {cta.button || 'Começar agora'} <ArrowRight size={18} />
+            {cta.button || 'Começar agora'} <Icons.ArrowRight size={18} />
           </Link>
         </div>
       </section>

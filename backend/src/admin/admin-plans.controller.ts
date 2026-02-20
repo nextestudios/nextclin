@@ -1,8 +1,9 @@
-import { Controller, Get, Patch, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SuperAdminGuard } from './admin.guard';
 import { Subscription, PlanTier } from '../tenants/entities/subscription.entity';
+import { PlanConfig } from './entities/plan-config.entity';
 
 const PLAN_DEFAULTS: Record<PlanTier, any> = {
     [PlanTier.FREE]: {
@@ -25,6 +26,8 @@ export class AdminPlansController {
     constructor(
         @InjectRepository(Subscription)
         private subscriptionsRepo: Repository<Subscription>,
+        @InjectRepository(PlanConfig)
+        private planConfigsRepo: Repository<PlanConfig>,
     ) { }
 
     @Get()
@@ -35,9 +38,40 @@ export class AdminPlansController {
             PRO: subscriptions.filter(s => s.plan === PlanTier.PRO).length,
             ENTERPRISE: subscriptions.filter(s => s.plan === PlanTier.ENTERPRISE).length,
         };
-        return Object.entries(PLAN_DEFAULTS).map(([plan, config]) => ({
-            plan, ...config, activeTenants: countByPlan[plan] || 0,
-        }));
+
+        const dbConfigs = await this.planConfigsRepo.find();
+        return Object.entries(PLAN_DEFAULTS).map(([planTier, defConfig]) => {
+            const dbConf = dbConfigs.find(c => c.plan === planTier);
+            return {
+                plan: planTier,
+                name: dbConf?.name ?? defConfig.name,
+                price: dbConf?.price ?? defConfig.price,
+                maxUnits: dbConf?.maxUnits !== undefined ? dbConf.maxUnits : defConfig.maxUnits,
+                maxProfessionals: dbConf?.maxProfessionals !== undefined ? dbConf.maxProfessionals : defConfig.maxProfessionals,
+                maxPatients: dbConf?.maxPatients !== undefined ? dbConf.maxPatients : defConfig.maxPatients,
+                features: dbConf?.features ?? defConfig.features,
+                activeTenants: countByPlan[planTier as PlanTier] || 0,
+            };
+        });
+    }
+
+    @Put(':plan')
+    async updatePlanConfig(
+        @Param('plan') plan: PlanTier,
+        @Body() dto: { name: string; price: number; maxUnits: number | null; maxProfessionals: number | null; maxPatients: number | null; features: string[] }
+    ) {
+        let conf = await this.planConfigsRepo.findOne({ where: { plan } });
+        if (!conf) {
+            conf = this.planConfigsRepo.create({ plan });
+        }
+        conf.name = dto.name;
+        conf.price = dto.price;
+        conf.maxUnits = dto.maxUnits;
+        conf.maxProfessionals = dto.maxProfessionals;
+        conf.maxPatients = dto.maxPatients;
+        conf.features = dto.features;
+        await this.planConfigsRepo.save(conf);
+        return { success: true, plan: conf };
     }
 
     @Patch(':tenantId/override')
