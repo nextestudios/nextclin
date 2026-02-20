@@ -39,6 +39,12 @@ export class AppointmentsService {
         if (filters?.date) {
             qb.andWhere('DATE(a.start_time) = :date', { date: filters.date });
         }
+        if (filters?.dateFrom && filters?.dateTo) {
+            qb.andWhere('DATE(a.start_time) BETWEEN :dateFrom AND :dateTo', {
+                dateFrom: filters.dateFrom,
+                dateTo: filters.dateTo,
+            });
+        }
         if (filters?.professionalId) {
             qb.andWhere('a.professional_id = :professionalId', { professionalId: filters.professionalId });
         }

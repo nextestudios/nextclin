@@ -1,10 +1,8 @@
-import { Controller, Get, Post, Put, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Patch, Body, Param, Query, Request } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { AttendanceStatus } from './entities/attendance.entity';
 
 @Controller('attendances')
-@UseGuards(AuthGuard('jwt'))
 export class AttendancesController {
     constructor(private readonly attendancesService: AttendancesService) { }
 
@@ -18,12 +16,17 @@ export class AttendancesController {
         return this.attendancesService.findQueue(req.user.tenantIds?.[0], unitId);
     }
 
+    @Get('stats/today')
+    async getTodayStats(@Request() req: any) {
+        return this.attendancesService.getTodayStats(req.user.tenantIds?.[0]);
+    }
+
     @Get(':id')
     findOne(@Request() req: any, @Param('id') id: string) {
         return this.attendancesService.findOne(req.user.tenantIds?.[0], id);
     }
 
-    @Put(':id/status')
+    @Patch(':id/status')
     updateStatus(
         @Request() req: any,
         @Param('id') id: string,

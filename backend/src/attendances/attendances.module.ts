@@ -5,12 +5,14 @@ import { AttendancesController } from './attendances.controller';
 import { Attendance } from './entities/attendance.entity';
 import { Application } from './entities/application.entity';
 import { StockModule } from '../stock/stock.module';
+import { FinancialModule } from '../financial/financial.module';
 import { Vaccine } from '../vaccines/entities/vaccine.entity';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Attendance, Application, Vaccine]),
         StockModule,
+        FinancialModule,
     ],
     controllers: [AttendancesController],
     providers: [AttendancesService],
