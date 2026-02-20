@@ -169,7 +169,7 @@ export default function PatientsPage() {
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 placeholder="Buscar por paciente ou CPF..."
-                                className="saas-input pl-10 bg-white"
+                                className="saas-input !pl-10 bg-white"
                             />
                         </div>
                         <div className="text-sm text-slate-500 font-medium">

@@ -1,0 +1,21 @@
+[     995ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://62.171.139.44:3001/vaccines/batches:0
+[     995ms] [ERROR] AxiosError: Request failed with status code 404
+    at eU (http://62.171.139.44/_next/static/chunks/a31c8e665c50a571.js:1:18559)
+    at XMLHttpRequest.y (http://62.171.139.44/_next/static/chunks/a31c8e665c50a571.js:1:22930)
+    at tt.request (http://62.171.139.44/_next/static/chunks/a31c8e665c50a571.js:1:31364) @ :0
+[  116945ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  116945ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  117043ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  117043ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

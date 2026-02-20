@@ -170,7 +170,7 @@ export default function AppointmentsPage() {
                                 type="date"
                                 value={selectedDate}
                                 onChange={e => setSelectedDate(e.target.value)}
-                                className="saas-input pl-10 w-full font-medium text-slate-800 cursor-pointer"
+                                className="saas-input !pl-10 w-full font-medium text-slate-800 cursor-pointer"
                             />
                         </div>
 
