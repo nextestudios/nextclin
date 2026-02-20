@@ -1,7 +1,7 @@
 # NextClin — Documentação Completa do Sistema
 
 > **ERP para Clínicas de Vacinação** | Multi-tenant SaaS
-> Versão: 1.0 | Última atualização: Fevereiro 2026
+> Versão: 2.0 | Última atualização: Fevereiro 2026
 
 ---
 
@@ -12,365 +12,208 @@
 | **Frontend** | Next.js 15 (App Router) + React 19 + TypeScript | 3000 |
 | **Backend** | NestJS + TypeORM + MySQL | 3001 |
 | **Banco de Dados** | MySQL 8 | 3306 |
-| **Autenticação** | JWT (Passport.js) | — |
+| **Autenticação** | JWT (Passport.js) + MFA (TOTP) | — |
+| **API Docs** | Swagger (OpenAPI 3.0) no `/api/docs` | — |
 
-### Multi-tenancy
-O sistema opera em modelo **multi-tenant por coluna** (`tenantId`). Cada entidade possui um `tenant_id` que isola os dados entre clínicas. O JWT transporta o `tenantIds[]` do usuário.
+### Multi-tenancy & Isolação
+O sistema opera em modelo **multi-tenant por coluna** (`tenantId`). Cada entidade relevante possui um `tenantId` que isola os dados entre clínicas. O JWT transporta os `tenantIds[]` do usuário após a autenticação (MFA quando ativado).
 
 ---
 
-## 2. Módulos do Sistema
+## 2. Módulos do Sistema (SaaS Completo)
 
-### 2.1 Autenticação e Usuários
-
-**Entidades:** `User`, `Tenant`
+### 2.1 Autenticação, Usuários e Segurança
+**Entidades:** `User`, `Tenant`, `UserMfa`
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /auth/login` | Público | Login com e-mail/senha, retorna JWT |
-| `POST /auth/register` | Público | Cadastro de novo usuário + tenant |
-| `GET /forgot-password` | Página | Tela de recuperação de senha |
+| `POST /auth/login` | Público | Login com e-mail/senha. Retorna JWT ou pede código MFA |
+| `POST /auth/register` | Público | Cadastro de novo usuário + criação de tenant inicial |
+| `POST /mfa/setup` | Auth | Gera chave secreta e QR Code (URI) para Autenticador |
+| `POST /mfa/verify` | Auth | Valida primeiro código e ativa o MFA permanentemente |
+| `POST /mfa/validate` | Auth | Valida código TOTP ou código de recuperação no Login |
+| `POST /mfa/disable` | Auth | Desativa MFA temporariamente |
 
-**Campos do Usuário:** `id`, `email`, `password` (hash bcrypt), `name`, `role`, `tenantIds[]`, `active`, `createdAt`
-
-**Campos do Tenant:** `id`, `name`, `cnpj`, `slug`, `settings` (JSON), `active`, `createdAt`
+**Segurança:**
+- Senhas hasheadas via `bcrypt`.
+- JWT configurável via `.env`.
+- Decorators `@Public()` e `@Roles(Role.ADMIN)` para RBAC nativo.
+- TOTP gerado via Node.js nativo `crypto`.
 
 ---
 
-### 2.2 Pacientes
-
-**Entidade:** `Patient`
+### 2.2 Pacientes e LGPD
+**Entidades:** `Patient`, `PatientConsent`
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /patients` | POST | Cadastrar paciente |
-| `GET /patients` | GET | Listar (busca por nome, CPF ou prontuário) |
-| `GET /patients/:id` | GET | Detalhe com atendimentos, aplicações e agendamentos |
-| `PUT /patients/:id` | PUT | Atualizar dados |
-| `DELETE /patients/:id` | DELETE | Soft-delete |
-
-**Campos:** `id`, `tenantId`, `prontuario` (código único), `name`, `cpf` (único por tenant), `birthDate`, `gender`, `phone`, `email`, `address`, `city`, `state`, `zipCode`, `guardianName`, `guardianCpf`, `guardianPhone`, `notes`, `active`
-
-**Relações:**
-- `1:N` → Attendances (atendimentos)
-- `1:N` → Appointments (agendamentos)
-
-**Telas Frontend:**
-- **Listagem** (`/dashboard/patients`) — tabela com busca, cadastro inline, ações (Ver Prontuário, Editar, Excluir)
-- **Prontuário** (`/dashboard/patients/[id]`) — 4 abas: Visão Geral, Atendimentos, Agendamentos, Vacinas Aplicadas
+| `GET /patients` | Auth | Listagem inteligente com busca por nome/CPF/prontuário |
+| `GET /patients/:id` | Auth | Prontuário detalhado com abas (Overview, Vacinas, Agendamentos) |
+| `POST /patient-consents` | Auth | Armazena termos de LGPD aceitos (Rastreia IP e timestamp) |
+| `GET /patient-consents/export/:patientId` | Auth | Exportabilidade de dados (LGPD) |
 
 ---
 
-### 2.3 Agendamentos (Appointments)
+### 2.3 Portal do Paciente (Self-Service)
+**Endpoint Público (`/portal`)**
 
-**Entidade:** `Appointment`
+Permite que pacientes da clínica interajam com o sistema nativamente sem senhas, usando OTP (via WhatsApp/SMS).
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /appointments` | POST | Criar agendamento |
-| `GET /appointments` | GET | Listar (filtros: date, professionalId, status) |
-| `GET /appointments/upcoming` | GET | Próximos 7 dias |
-| `GET /appointments/:id` | GET | Detalhe do agendamento |
-| `PATCH /appointments/:id/status` | PATCH | Alterar status |
-| `DELETE /appointments/:id` | DELETE | Cancelar |
-
-**Campos:** `id`, `tenantId`, `patientId`, `professionalId`, `unitId`, `vaccineId`, `type` (CLINIC/HOME), `status` (REQUESTED/CONFIRMED/IN_PROGRESS/COMPLETED/CANCELLED/NO_SHOW), `startTime`, `endTime`, `homeAddress`, `displacementFee`, `homeVisitChecklist` (JSON), `notes`
-
-**Enums de Status:**
-- `REQUESTED` → Solicitado
-- `CONFIRMED` → Confirmado
-- `IN_PROGRESS` → Em Andamento
-- `COMPLETED` → Concluído
-- `CANCELLED` → Cancelado
-- `NO_SHOW` → Não Compareceu
-
-**Enums de Tipo:**
-- `CLINIC` → Atendimento na clínica
-- `HOME` → Visita domiciliar
-
-**Entidades Auxiliares:**
-- `ScheduleBlock` — bloqueios de agenda (profissional/unidade)
-- `HomeVisitChecklist` — itens de checklist para visitas domiciliares
+| `POST /portal/auth/request-otp` | Público | Envia código 6-dígitos para telefone do paciente (CPF) |
+| `POST /portal/auth/verify-otp` | Público | Retorna token de sessão temporária de paciente |
+| `GET /portal/patients/:cpf/vaccines` | Público | Visualizar a Carteira de Vacinação Digital |
+| `POST /portal/appointments/request` | Público | Solicitar novo agendamento a ser confirmado pela clínica |
 
 ---
 
-### 2.4 Atendimentos (Attendances)
-
-**Entidade:** `Attendance`
+### 2.4 Agendamentos (Appointments) & Rotas Domiciliares
+**Entidades:** `Appointment`, `ScheduleBlock`, `HomeVisitChecklist`
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /attendances` | POST | Inserir na fila |
-| `GET /attendances/queue` | GET | Fila de espera (filtro por unit) |
-| `GET /attendances/stats/today` | GET | Estatísticas do dia |
-| `GET /attendances/:id` | GET | Detalhe |
-| `PATCH /attendances/:id/status` | PATCH | Alterar status (WAITING → IN_PROGRESS → COMPLETED) |
-| `POST /attendances/:id/apply` | POST | Aplicar vacina no atendimento |
+| `POST /appointments` | Auth | Cria agendamento presencial ou domiciliar |
+| `GET /appointments/routes` | Auth | **Rotas Otimizadas:** Agrupa visitas domiciliares por prefixo do CEP |
+| `GET /appointments/routes/calculate-fee` | Auth | Calcula taxa de deslocamento pela distância do CEP |
+| `GET /appointments/calendar/auth` | Auth | **Integração Google Calendar:** Inicia OAuth2 |
+| `GET /appointments/calendar/callback` | Público | Recebe código do Google para token |
 
-**Campos:** `id`, `tenantId`, `code` (gerado automático), `patientId`, `professionalId`, `unitId`, `status` (WAITING/IN_PROGRESS/COMPLETED/CANCELLED), `priority` (HIGH/MEDIUM/LOW/ELECTIVE), `notes`
-
-**Entidade Filha — Application (Aplicação de Vacina):**
-- `id`, `attendanceId`, `batchId`, `vaccineId`, `doseNumber`, `applicationDate`, `nextDoseDate`, `notes`, `appliedBy`
-
-**Tela Frontend:**
-- **Fila de Atendimento** (`/dashboard/attendance`) — cards com posição, prioridade visual (cores), botões Iniciar/Finalizar/Cancelar
+**Funcionalidades Especiais:**
+- Integração `GoogleCalendarService` cria automaticamente os eventos na agenda da clínica.
+- Geração de lista de suprimentos para viagens via `HomeVisitChecklist`.
 
 ---
 
-### 2.5 Vacinas e Lotes
-
-**Entidades:** `Vaccine`, `Batch`
+### 2.5 Atendimentos (Attendances)
+A fila do dia-a-dia da clínica. Controla entrada, preparo e aplicação de vacinas.
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /vaccines` | POST | Cadastrar vacina |
-| `GET /vaccines` | GET | Listar vacinas ativas com lotes |
-| `PUT /vaccines/:id` | PUT | Atualizar vacina |
-| `DELETE /vaccines/:id` | DELETE | Soft-delete (marca como inativa) |
-| `POST /vaccines/batches` | POST | Cadastrar lote |
-| `GET /vaccines/:vaccineId/batches` | GET | Lotes de uma vacina |
-| `GET /vaccines/alerts/low-stock` | GET | Vacinas abaixo do estoque mínimo |
-| `GET /vaccines/batches/expiring` | GET | Lotes vencendo (filtro por dias) |
-
-**Campos da Vacina:** `id`, `tenantId`, `name`, `manufacturer`, `doseIntervalDays`, `totalDoses`, `costPrice`, `salePrice`, `minimumStock` (padrão: 10), `active`
-
-**Campos do Lote:** `id`, `tenantId`, `vaccineId`, `lotNumber`, `expiryDate`, `quantityReceived`, `quantityAvailable`, `supplier`, `receivedAt`
-
-**Tela Frontend:**
-- **Catálogo** (`/dashboard/vaccines`) — cards com preço, lotes ativos, esquema, botão excluir
+| `GET /attendances/queue` | Auth | Fila de espera separada por unidade |
+| `POST /attendances` | Auth | Inserir paciente na fila |
+| `POST /attendances/:id/apply` | Auth | Aplica vacina (gera lote consumido, remove do estoque, notifica) |
 
 ---
 
-### 2.6 Gestão de Estoque
+### 2.6 Vacinas e Gestão de Estoque
+**Entidades:** `Vaccine`, `Batch`, `StockMovement`
 
-**Entidade:** `StockMovement`
+- **Vacinas:** Cadastro de imunizantes com esquema de doses, estoque mínimo.
+- **Lotes:** O número do lote atado a data de validade.
+- **Movimentações (`StockMovement`):** Registra Entradas (compra), Saídas (perda/transferência) e Aplicações.
+- **Alertas de Risco:** Rotas para listar lotes vencendo nos próximos X dias e vacinas em baixa automática.
+
+---
+
+### 2.7 Financeiro Completo e Tabela de Preços
+**Entidades:** `AccountReceivable`, `AccountPayable`, `PriceTable`
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /stock/entry` | POST | Registrar entrada |
-| `POST /stock/exit` | POST | Registrar saída |
-| `GET /stock/movements` | GET | Histórico (filtro por batchId) |
-
-**Campos:** `id`, `tenantId`, `batchId`, `type` (ENTRY/EXIT), `quantity`, `reason` (PURCHASE/APPLICATION/LOSS/ADJUSTMENT/TRANSFER/EXPIRY), `userId`, `notes`
-
-**Tela Frontend:**
-- **Controle de Estoque** (`/dashboard/stock`) — tabela de movimentações com lotes, quantidades e razões
+| `GET /price-table/best-price` | Auth | Verifica se a operadora (Convênio) cobre parcial/total |
+| `GET /financial/dashboard` | Auth | KPIs de Receita, Despesa e Margem |
+| `POST /financial/receivables` | Auth | Criar conta a receber ligada ao atendimento |
+| `POST /payments/pix/generate` | Auth | **Asaas PIX Gateway:** Gera cobrança em tempo real c/ QR Code |
+| `POST /payments/webhook` | Público | Recebe webhook de bancos/gateways para atualizar como PAGO |
 
 ---
 
-### 2.7 Financeiro
+### 2.8 Notificações SMS/E-mail (Omnichannel)
+**Entidades:** `MessageLog`
+**Serviços Internos:** `NotificationQueue` (BullMQ style), `MessagingService`
 
-**Entidades:** `AccountReceivable`, `AccountPayable`
+- Histórico absoluto de mensagens enviadas (status SENT/FAILED).
+- `MessagesController` no painel permite *reenvio manual* em caso de falha de provedor.
+- Integração padrão: `EvolutionAPI` (WhatsApp) e `Nodemailer` (SMTP E-mails).
+
+---
+
+### 2.9 SaaS Billing & Planos
+**Entidade:** `Subscription`
 
 | Endpoint | Método | Descrição |
 |----------|--------|-----------|
-| `POST /financial/receivables` | POST | Criar conta a receber |
-| `GET /financial/receivables` | GET | Listar (filtro por status) |
-| `PUT /financial/receivables/:id/pay` | PUT | Marcar como pago |
-| `GET /financial/receivables/overdue` | GET | Em atraso |
-| `POST /financial/payables` | POST | Criar conta a pagar |
-| `GET /financial/payables` | GET | Listar (filtro por status) |
-| `PUT /financial/payables/:id/pay` | PUT | Marcar como pago |
-| `GET /financial/dashboard` | GET | Estatísticas financeiras |
+| `GET /subscription/current` | Auth | Mostra se tenant está no Free, Pro ou Enterprise |
+| `GET /subscription/plans` | Auth | Tabela e limites descritivos de features |
 
-**Campos — Conta a Receber:** `id`, `tenantId`, `patientId`, `attendanceId`, `amount`, `paymentMethod` (PIX/CREDIT_CARD/DEBIT_CARD/CASH/BANK_SLIP/INSURANCE), `status` (OPEN/PAID/OVERDUE/CANCELLED), `dueDate`, `paidAt`, `notes`
-
-**Campos — Conta a Pagar:** `id`, `tenantId`, `description`, `amount`, `costCenter`, `status` (PENDING/PAID/OVERDUE/CANCELLED), `dueDate`, `paidAt`, `notes`
-
-**Tela Frontend:**
-- **Financeiro Corporativo** (`/dashboard/financial`) — tabs Contas a Receber / Contas a Pagar, formulários de criação, botão Liquidar, tabela com status visual
+Isola acessos dependendo do plano associado àquele Tenant. 
 
 ---
 
-### 2.8 NFSe (Nota Fiscal de Serviço)
+### 2.10 Dashboard Assistencial (Analytics)
+**Tela:** `/dashboard/analytics`
 
-**Entidade:** `Nfse`
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `POST /nfse/:accountReceivableId/:patientId` | POST | Emitir NFSe |
-| `GET /nfse` | GET | Listar todas |
-| `POST /nfse/:id/retry` | POST | Retentar emissão |
-
-**Campos:** `id`, `tenantId`, `accountReceivableId`, `patientId`, `nfseNumber`, `status` (PENDING/ISSUED/ERROR/CANCELLED), `xmlUrl`, `pdfUrl`, `issuedAt`, `errorMessage`
-
-**Tela Frontend:**
-- **Notas Fiscais** (`/dashboard/nfse`) — listagem com status, botão emitir/retentar
+Dashboard gerencial focado na Saúde dos Pacientes:
+- **Taxa de Cobertura Vacinal (%)**: Analisa esquema concluído.
+- **Top 5 Vacinas Aplicadas**.
+- **Taxa de Retenção e No-show**.
+- **Média de tempo de espera**.
 
 ---
 
-### 2.9 Profissionais
+## 3. Worker Background Jobs / Filas (Cron Processes)
 
-**Entidade:** `Professional`
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `POST /professionals` | POST | Cadastrar |
-| `GET /professionals` | GET | Listar todos |
-| `DELETE /professionals/:id` | DELETE | Desativar (soft-delete) |
-
-**Campos:** `id`, `tenantId`, `name`, `type` (DOCTOR/NURSE/TECHNICIAN), `councilNumber` (CRM/COREN), `phone`, `email`, `active`
-
-**Tela Frontend:**
-- **Equipe Clínica** (`/dashboard/professionals`) — tabela com ícone por tipo, status, botão Revogar Acesso
+Implementados via `@nestjs/schedule` com envio enfileirado no `NotificationQueue` (Exponential Backoff):
+| Tarefa Oculta | Horário (CRON) | Ação Executada |
+|---------------|----------------|----------------|
+| `sendAppointmentReminders` | 08h Diário | Envia zap de lembrete 24h antes da consulta |
+| `checkOverdueReceivables` | 07h Diário | Cobra atrasados automaticamente por WhatsApp/Email |
+| `checkUpcomingPayables` | 07h Diário | Avisa o RH/Gestor Financeiro de contas vencendo |
+| `checkExpiringBatches` | Seg 06h | Alerta por email lotes próximos ao vencimento |
+| `sendNextDoseReminders` | 09h Diário | Solicita retorno do paciente 7 dias antes da 2ª dose |
 
 ---
 
-### 2.10 Convênios / Operadoras
+## 4. Telas do Frontend (Next.js)
 
-**Entidade:** `Insurance`
+O SaaS conta com três instâncias visuais claras:
+1. **Public Landing Page (`/`)**: Totalmente em Server Components, SEO optimizado (`manifest.json` e PWA linkado). Mostra os cards de pricing e funcionalidades SaaS.
+2. **Dashboard Corporativo (`/dashboard/*`)**: App rico reativo a Zustand ou AuthContext gerido pelo JWT.
+3. **Portal Paciente**: Views otimizadas para Celular.
 
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `POST /insurances` | POST | Cadastrar |
-| `GET /insurances` | GET | Listar |
-| `DELETE /insurances/:id` | DELETE | Desativar |
-
-**Campos:** `id`, `tenantId`, `name`, `ansCode`, `discountPercent`, `active`
-
-**Tela Frontend:**
-- **Operadoras** (`/dashboard/insurances`) — tabela com código ANS, percentual de desconto, botão Suspender
-
----
-
-### 2.11 Unidades / Polos
-
-**Entidade:** `Unit`
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `POST /units` | POST | Cadastrar |
-| `GET /units` | GET | Listar |
-| `DELETE /units/:id` | DELETE | Desativar |
-
-**Campos:** `id`, `tenantId`, `name`, `cnpj`, `phone`, `email`, `address`, `city`, `state`, `zipCode`, `active`
-
-**Tela Frontend:**
-- **Unidades** (`/dashboard/units`) — cards com endereço, contato, botão Encerrar Atividades
+### Mapa Atual do App:
+- `/` — *Landing Page Publica SaaS*
+- `/login` & `/forgot-password` — *Sistema auth multifator*
+- `/dashboard/analytics` — *Painel Assistencial*
+- `/dashboard/billing` — *Downgrade/Upgrade de Planos e Faturas*
+- `/dashboard/notifications` — *Monitoramento do Bot do WhatsApp e e-mails*
+- `/dashboard/patients/[id]` — *Prontuário com Histórico*
+- `/dashboard/financial` & `/dashboard/nfse` — *Faturamento e boletos*
+- `/dashboard/vaccines` & `/dashboard/stock` — *Catálogo e Doses Físicas*
 
 ---
 
-### 2.12 Relatórios
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `GET /reports/vaccines-applied` | GET | Vacinas aplicadas por período |
-| `GET /reports/overdue-receivables` | GET | Contas em atraso |
-| `GET /reports/stock-summary` | GET | Resumo de estoque |
-| `GET /reports/commission` | GET | Relatório de comissão por profissional |
-| `GET /reports/low-stock` | GET | Alertas de estoque baixo |
+## 5. Design System Premium e Performance
+- **Visual SaaS Pro**: Tons Dark/Glassmorphism (Slate 900, Gradient Teal para Cian).
+- PWA Native setup ready (`manifest.json` linkado gerando mobile friendly app).
+- `Lucide-React` Icons unificados em toda plataforma.
 
 ---
 
-### 2.13 Configurações
+## 6. Ambiente de Desenvolvimento & `.env`
 
-**Tela Frontend:** `/dashboard/settings`
-- Dados institucionais (razão social, CNPJ, contato)
-- Preferências de notificação (WhatsApp, e-mail, antecedência)
-- Regras de negócio (prazo padrão de pagamento)
+Para rodar todo o NextClin 2.0 (com as features Premium de PIX e Notificação):
 
----
+```env
+# PIX Payments (Asaas Padrão Mockado, mas aceita prod)
+PAYMENT_API_URL=https://sandbox.asaas.com/api/v3
+PAYMENT_API_KEY=sua-api-key
 
-### 2.14 Auditoria e Logs
+# Google Calendar (Agendamentos da Casa)
+GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxx
+GOOGLE_REDIRECT_URI=http://localhost:3001/appointments/calendar/callback
 
-**Entidade:** `AuditLog`
-
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `GET /audit-logs` | GET | Listar últimos 200 registros |
-
-**Campos:** `id`, `tenantId`, `userId`, `action` (CREATE/UPDATE/DELETE/LOGIN/STATUS_CHANGE), `entityType`, `entityId`, `oldValues` (JSON), `newValues` (JSON), `ipAddress`, `createdAt`
-
-**Tela Frontend:** `/dashboard/audit` — tabela com filtros por busca e entidade
-
----
-
-## 3. Automações (Cron Jobs)
-
-| Cron | Horário | Descrição |
-|------|---------|-----------|
-| `sendAppointmentReminders` | Diário 8h | Envia lembretes de agendamentos nas próximas 24h |
-| `checkOverdueReceivables` | Diário 7h | Detecta contas a receber vencidas |
-| `checkUpcomingPayables` | Diário 7h | Alerta contas a pagar nos próximos 5 dias |
-| `checkExpiringBatches` | Segunda 6h | Lista lotes vencendo em 60 dias |
-| `checkLowStock` | Diário 7h | Compara estoque total vs `minimumStock` por vacina |
-| `sendNextDoseReminders` | Diário 9h | Lembretes de próximas doses (7 dias antes) |
-
----
-
-## 4. Telas do Frontend
-
-| Rota | Página | Acesso |
-|------|--------|--------|
-| `/` | Landing (redireciona) | Público |
-| `/login` | Tela de Login | Público |
-| `/forgot-password` | Recuperação de Senha | Público |
-| `/dashboard` | Dashboard Principal (KPIs) | Auth |
-| `/dashboard/patients` | Listagem de Pacientes | Auth |
-| `/dashboard/patients/[id]` | Prontuário do Paciente | Auth |
-| `/dashboard/appointments` | Agenda de Atendimentos | Auth |
-| `/dashboard/attendance` | Fila de Atendimento | Auth |
-| `/dashboard/vaccines` | Catálogo de Vacinas | Auth |
-| `/dashboard/stock` | Controle de Estoque | Auth |
-| `/dashboard/professionals` | Equipe Clínica | Auth |
-| `/dashboard/insurances` | Convênios e Operadoras | Auth |
-| `/dashboard/financial` | Financeiro (AR + AP) | Auth |
-| `/dashboard/nfse` | Notas Fiscais Eletrônicas | Auth |
-| `/dashboard/units` | Unidades e Polos | Auth |
-| `/dashboard/settings` | Configurações da Clínica | Auth |
-| `/dashboard/audit` | Auditoria e Logs | Auth |
-
----
-
-## 5. Design System
-
-- **Paleta principal:** Teal (700/600/100) + Slate (900/700/500/100)
-- **Componentes CSS:** `saas-card`, `saas-input`, `saas-label`, `saas-button-primary`, `saas-button-secondary`
-- **Tipografia:** Inter (Google Fonts)
-- **Ícones:** Lucide React
-- **Layout:** Sidebar fixa à esquerda + conteúdo principal com padding
-- **Responsividade:** Grid adaptativo (1-4 colunas)
-
----
-
-## 6. Segurança
-
-- JWT com Passport.js (estratégias: local + jwt)
-- Guard global `AuthGuard('jwt')` em todos os controllers (exceto `/auth/login` e `/auth/register`)
-- Decorator `@Public()` para rotas públicas
-- Isolamento de dados por `tenantId` em todas as queries
-- Soft-delete em entidades críticas (pacientes, vacinas, profissionais)
-- Audit log automático para operações sensíveis
-- Hash de senha com bcrypt
-
----
-
-## 7. Estrutura de Diretórios
-
-```
-nextclin/
-├── backend/src/
-│   ├── auth/           # Login, JWT, guards
-│   ├── users/          # CRUD de usuários
-│   ├── tenants/        # Tenants, Professionals, Insurances, Units
-│   ├── patients/       # Pacientes + Prontuário
-│   ├── appointments/   # Agendamentos, bloqueios, checklist domiciliar
-│   ├── attendances/    # Fila de atendimento + aplicações de vacina
-│   ├── vaccines/       # Catálogo de vacinas + lotes
-│   ├── stock/          # Movimentações de estoque
-│   ├── financial/      # Contas a receber/pagar
-│   ├── nfse/           # Notas fiscais eletrônicas
-│   ├── reports/        # Relatórios consolidados
-│   ├── notifications/  # Cron jobs + messaging
-│   └── common/         # Audit log + entidades compartilhadas
-├── frontend/src/
-│   ├── app/            # Pages (Next.js App Router)
-│   ├── components/     # Sidebar, layout
-│   ├── context/        # AuthContext
-│   └── services/       # API client (axios)
-└── docker-compose.yml  # MySQL + backend + frontend
+# Notificações WhatsApp (Evolution) e E-mail
+EVOLUTION_API_URL=http://localhost:8080
+EVOLUTION_API_KEY=xxx
+EVOLUTION_INSTANCE=nextclin
+SMTP_HOST=smtp.mailgun.org
+SMTP_USER=xxx
 ```
 
----
+Todos os serviços integram modo mock fallback graceless (se apagar variável, roda 100% de forma estática controlada, excelente para vendas e desenvolvimento offline). 
 
-*© 2026 Next Vision. Todos os direitos reservados.*
+---
+*© 2026 Next Studios | Sistema Totalmente Atualizado.*
