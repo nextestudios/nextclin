@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import {
     Activity, Users, Calendar, Stethoscope, Syringe,
     PackageSearch, DollarSign, FileText, UserPlus,
-    Building2, MapPin, LogOut, Settings, ScrollText, Bell
+    Building2, MapPin, LogOut, Settings, ScrollText, Bell,
+    BarChart3, CreditCard
 } from 'lucide-react';
 
 const menuGroups = [
@@ -42,6 +43,8 @@ const menuGroups = [
             { label: 'Configurações', href: '/dashboard/settings', icon: Settings },
             { label: 'Auditoria', href: '/dashboard/audit', icon: ScrollText },
             { label: 'Notificações', href: '/dashboard/notifications', icon: Bell },
+            { label: 'Dashboard Assistencial', href: '/dashboard/analytics', icon: BarChart3 },
+            { label: 'Planos e Billing', href: '/dashboard/billing', icon: CreditCard },
         ]
     }
 ];

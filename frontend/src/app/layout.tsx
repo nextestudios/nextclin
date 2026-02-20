@@ -7,7 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "NextClin",
-  description: "Gestão de Clínicas de Vacinação",
+  description: "Gestão de Clínicas de Vacinação — SaaS Multi-tenant",
+  manifest: "/manifest.json",
+  themeColor: "#0d9488",
 };
 
 export default function RootLayout({
