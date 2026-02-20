@@ -26,6 +26,15 @@ export class Professional {
     @Column({ nullable: true })
     specialty: string;
 
+    @Column({ nullable: true })
+    phone: string;
+
+    @Column({ nullable: true })
+    email: string;
+
+    @Column({ name: 'commission_percent', type: 'decimal', precision: 5, scale: 2, default: 0 })
+    commissionPercent: number;
+
     @Column({ default: true })
     active: boolean;
 

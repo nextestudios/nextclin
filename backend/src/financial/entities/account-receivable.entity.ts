@@ -55,6 +55,12 @@ export class AccountReceivable {
     @Column({ name: 'insurance_id', nullable: true })
     insuranceId: string;
 
+    @Column({ name: 'professional_id', nullable: true })
+    professionalId: string;
+
+    @Column({ name: 'commission_amount', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    commissionAmount: number;
+
     @Column({ type: 'text', nullable: true })
     notes: string;
 

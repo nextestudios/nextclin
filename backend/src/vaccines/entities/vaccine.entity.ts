@@ -30,6 +30,9 @@ export class Vaccine {
     @Column({ name: 'sale_price', type: 'decimal', precision: 10, scale: 2, default: 0 })
     salePrice: number;
 
+    @Column({ name: 'minimum_stock', type: 'int', default: 10 })
+    minimumStock: number;
+
     @Column({ default: true })
     active: boolean;
 
