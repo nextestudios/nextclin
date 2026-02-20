@@ -18,6 +18,7 @@ import { NfseModule } from './nfse/nfse.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CommonModule } from './common/common.module';
 import { ReportsModule } from './reports/reports.module';
+import { AdminModule } from './admin/admin.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { TenantMiddleware } from './common/tenant.middleware';
@@ -59,6 +60,7 @@ import { TenantMiddleware } from './common/tenant.middleware';
     NotificationsModule,
     CommonModule,
     ReportsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

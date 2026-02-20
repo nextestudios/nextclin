@@ -1,34 +1,47 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import { Check, Syringe, Shield, Users, Calendar, BarChart3, Smartphone, Star, ArrowRight, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState(0);
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+async function getCmsConfig() {
+  try {
+    const res = await fetch(`${API}/admin/landing-cms`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+const FEATURE_LIST = [
+  { icon: Calendar, title: 'Agendamento Inteligente', desc: 'Online, domiciliar e presencial com bloqueio de horários e fila de espera' },
+  { icon: Syringe, title: 'Controle de Vacinas', desc: 'Lotes, validades, cadeia de frio e alertas automáticos de reposição' },
+  { icon: Shield, title: 'LGPD e Segurança', desc: 'Termos de consentimento, RBAC, MFA e auditoria completa' },
+  { icon: BarChart3, title: 'Dashboard Assistencial', desc: 'Cobertura vacinal, taxa de no-show e tendências mensais' },
+  { icon: Smartphone, title: 'WhatsApp Integrado', desc: 'Lembretes automáticos, próxima dose e confirmação de presença' },
+  { icon: Users, title: 'Multi-tenant', desc: 'Cada clínica isolada, múltiplas unidades e profissionais por tenant' },
+];
+
+export default async function LandingPage() {
+  const cms = await getCmsConfig();
+  const hero = cms?.hero || {};
+  const pricing = cms?.pricing || {};
+  const cta = cms?.cta || {};
+  const features = cms?.features || {};
 
   const plans = [
     {
-      name: 'Gratuito', price: 'R$ 0', period: '/mês',
-      features: ['1 unidade', '50 pacientes', '3 profissionais', 'Agendamentos', 'Controle de estoque', 'Suporte por email'],
+      name: 'Gratuito', price: pricing.free_price || 'R$ 0', period: '/mês',
+      features: ['1 unidade', '50 pacientes', '3 profissionais', 'Agendamentos', 'Controle de estoque'],
     },
     {
-      name: 'Profissional', price: 'R$ 297', period: '/mês', popular: true,
-      features: ['Unidades ilimitadas', 'Pacientes ilimitados', '10 profissionais', 'WhatsApp automático', 'NFSe integrada', 'Portal do Paciente', 'Dashboard assistencial', 'Suporte prioritário'],
+      name: 'Profissional', price: pricing.pro_price || 'R$ 297', period: '/mês', popular: true,
+      features: ['Unidades ilimitadas', 'Pacientes ilimitados', '10 profissionais', 'WhatsApp automático', 'NFSe integrada', 'Portal do Paciente', 'Dashboard assistencial'],
     },
     {
-      name: 'Enterprise', price: 'R$ 697', period: '/mês',
-      features: ['Tudo do Pro', 'Profissionais ilimitados', 'API pública', 'White-label', 'SSO/SAML', 'Gestor de conta dedicado', 'SLA 99.9%', 'Customizações'],
+      name: 'Enterprise', price: pricing.enterprise_price || 'R$ 697', period: '/mês',
+      features: ['Tudo do Pro', 'Profissionais ilimitados', 'API pública', 'White-label', 'SSO/SAML', 'Gestor de conta dedicado'],
     },
-  ];
-
-  const features = [
-    { icon: Calendar, title: 'Agendamento Inteligente', desc: 'Online, domiciliar e presencial com bloqueio de horários e fila de espera' },
-    { icon: Syringe, title: 'Controle de Vacinas', desc: 'Lotes, validades, cadeia de frio e alertas automáticos de reposição' },
-    { icon: Shield, title: 'LGPD e Segurança', desc: 'Termos de consentimento, RBAC, MFA e auditoria completa' },
-    { icon: BarChart3, title: 'Dashboard Assistencial', desc: 'Cobertura vacinal, taxa de no-show e tendências mensais' },
-    { icon: Smartphone, title: 'WhatsApp Integrado', desc: 'Lembretes automáticos, próxima dose e confirmação de presença' },
-    { icon: Users, title: 'Multi-tenant', desc: 'Cada clínica isolada, múltiplas unidades e profissionais por tenant' },
   ];
 
   return (
@@ -51,22 +64,23 @@ export default function LandingPage() {
         </nav>
         <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-32 text-center">
           <div className="inline-flex items-center gap-2 bg-teal-600/20 border border-teal-500/30 rounded-full px-4 py-1.5 text-sm text-teal-300 mb-6">
-            <Zap size={14} /> SaaS para Clínicas de Vacinação
+            <Zap size={14} /> {hero.badge || 'SaaS para Clínicas de Vacinação'}
           </div>
           <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-            Gestão completa para<br />
-            <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">clínicas de vacinação</span>
+            {hero.title_line1 || 'Gestão completa para'}<br />
+            <span className="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              {hero.title_line2 || 'clínicas de vacinação'}
+            </span>
           </h1>
           <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-10">
-            Agendamentos, estoque, financeiro, NFSe, notificações automáticas e muito mais.
-            Tudo em um único sistema multi-tenant, seguro e compliant com LGPD.
+            {hero.subtitle || 'Agendamentos, estoque, financeiro, NFSe, notificações automáticas e muito mais.'}
           </p>
           <div className="flex gap-4 justify-center">
             <Link href="/login" className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-500 transition-all hover:shadow-lg hover:shadow-teal-500/25 flex items-center gap-2">
-              Começar grátis <ArrowRight size={18} />
+              {hero.cta_primary || 'Começar grátis'} <ArrowRight size={18} />
             </Link>
             <a href="#pricing" className="border border-slate-600 text-slate-300 px-6 py-3 rounded-lg font-semibold hover:border-slate-400 hover:text-white transition">
-              Ver planos
+              {hero.cta_secondary || 'Ver planos'}
             </a>
           </div>
         </div>
@@ -75,11 +89,11 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Tudo que sua clínica precisa</h2>
-          <p className="text-slate-400 max-w-lg mx-auto">Sistema completo para gestão de clínicas de vacinação, do agendamento ao financeiro.</p>
+          <h2 className="text-3xl font-bold mb-4">{features.title || 'Tudo que sua clínica precisa'}</h2>
+          <p className="text-slate-400 max-w-lg mx-auto">{features.subtitle || 'Sistema completo para gestão de clínicas de vacinação.'}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {features.map(f => {
+          {FEATURE_LIST.map(f => {
             const Icon = f.icon;
             return (
               <div key={f.title} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:border-teal-500/30 transition-all group">
@@ -97,11 +111,11 @@ export default function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="max-w-6xl mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Planos que cabem no seu bolso</h2>
-          <p className="text-slate-400">Comece grátis, escale quando precisar.</p>
+          <h2 className="text-3xl font-bold mb-4">{pricing.title || 'Planos que cabem no seu bolso'}</h2>
+          <p className="text-slate-400">{pricing.subtitle || 'Comece grátis, escale quando precisar.'}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {plans.map((plan, i) => (
+          {plans.map(plan => (
             <div key={plan.name} className={`rounded-xl p-8 transition-all ${plan.popular
               ? 'bg-gradient-to-b from-teal-600/20 to-slate-800 border-2 border-teal-500 shadow-lg shadow-teal-500/10 relative'
               : 'bg-slate-800/50 border border-slate-700/50 hover:border-slate-600'}`}>
@@ -135,15 +149,14 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
         <div className="bg-gradient-to-r from-teal-600/20 to-blue-600/20 border border-teal-500/20 rounded-2xl p-12">
-          <h2 className="text-3xl font-bold mb-4">Sua clínica merece o melhor</h2>
-          <p className="text-slate-300 mb-8">14 dias grátis. Sem cartão de crédito. Configure em minutos.</p>
+          <h2 className="text-3xl font-bold mb-4">{cta.title || 'Sua clínica merece o melhor'}</h2>
+          <p className="text-slate-300 mb-8">{cta.subtitle || '14 dias grátis. Sem cartão de crédito. Configure em minutos.'}</p>
           <Link href="/login" className="inline-flex items-center gap-2 bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-teal-500 transition-all hover:shadow-lg hover:shadow-teal-500/25">
-            Começar agora <ArrowRight size={18} />
+            {cta.button || 'Começar agora'} <ArrowRight size={18} />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-slate-800 py-8 text-center text-sm text-slate-500">
         <p>© {new Date().getFullYear()} NextClin by Next Studios. Todos os direitos reservados.</p>
       </footer>
