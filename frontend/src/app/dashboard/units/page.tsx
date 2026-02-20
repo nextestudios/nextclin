@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import {
     Building2, Plus, X, MapPin,
-    Phone, Mail, CheckCircle2, Factory, PowerOff
+    Phone, Mail, CheckCircle2, Factory, PowerOff, Edit
 } from 'lucide-react';
 
 interface Unit {
@@ -23,7 +23,9 @@ interface Unit {
 export default function UnitsPage() {
     const [units, setUnits] = useState<Unit[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ name: '', cnpj: '', phone: '', email: '', address: '', city: '', state: '', zipCode: '' });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const emptyForm = { name: '', cnpj: '', phone: '', email: '', address: '', city: '', state: '', zipCode: '' };
+    const [form, setForm] = useState(emptyForm);
 
     useEffect(() => { loadUnits(); }, []);
 
@@ -33,10 +35,27 @@ export default function UnitsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await api.post('/units', form);
-        setForm({ name: '', cnpj: '', phone: '', email: '', address: '', city: '', state: '', zipCode: '' });
+        if (editingId) {
+            await api.put(`/units/${editingId}`, form);
+        } else {
+            await api.post('/units', form);
+        }
+        setForm(emptyForm);
+        setEditingId(null);
         setShowForm(false);
         loadUnits();
+    };
+
+    const startEdit = (u: Unit) => {
+        setEditingId(u.id);
+        setForm({ name: u.name, cnpj: u.cnpj || '', phone: u.phone || '', email: u.email || '', address: u.address || '', city: u.city || '', state: u.state || '', zipCode: u.zipCode || '' });
+        setShowForm(true);
+    };
+
+    const cancelForm = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
     };
 
     const handleDeactivate = async (id: string) => {
@@ -57,18 +76,18 @@ export default function UnitsPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelForm() : setShowForm(true)}
                     className={showForm ? "saas-button-secondary" : "saas-button-primary"}
                 >
-                    {showForm ? <><X size={18} /> Cancelar Abertura</> : <><Plus size={18} /> Abrir Nova Filial</>}
+                    {showForm ? <><X size={18} /> Cancelar</> : <><Plus size={18} /> Abrir Nova Filial</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${editingId ? 'border-t-amber-500' : 'border-t-teal-600'}`}>
                     <div className="mb-6 border-b border-slate-100 pb-4 flex items-center gap-2">
-                        <Factory size={20} className="text-teal-600" />
-                        <h3 className="text-lg font-semibold text-slate-800">Alvará Comercial e Endereçamento</h3>
+                        <Factory size={20} className={editingId ? 'text-amber-500' : 'text-teal-600'} />
+                        <h3 className="text-lg font-semibold text-slate-800">{editingId ? '✏️ Editar Unidade' : 'Alvará Comercial e Endereçamento'}</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="md:col-span-2">
@@ -110,8 +129,8 @@ export default function UnitsPage() {
                         </div>
                     </div>
                     <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
-                        <button type="submit" className="saas-button-primary">
-                            <CheckCircle2 size={18} /> Cadastrar Filial Autorizada
+                        <button type="submit" className={editingId ? 'saas-button-primary bg-amber-600 hover:bg-amber-700' : 'saas-button-primary'}>
+                            <CheckCircle2 size={18} /> {editingId ? 'Salvar Alterações' : 'Cadastrar Filial Autorizada'}
                         </button>
                     </div>
                 </form>
@@ -173,13 +192,16 @@ export default function UnitsPage() {
                             )}
                         </div>
 
-                        {unit.active && (
-                            <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/50 flex justify-end">
+                        <div className="px-5 py-4 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-2">
+                            <button onClick={() => startEdit(unit)} className="text-xs uppercase font-bold tracking-wider text-teal-600 hover:text-teal-800 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+                                <Edit size={14} /> Editar
+                            </button>
+                            {unit.active && (
                                 <button onClick={() => handleDeactivate(unit.id)} className="text-xs uppercase font-bold tracking-wider text-rose-600 hover:text-rose-800 flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-                                    <PowerOff size={14} /> Encerrar Atividades
+                                    <PowerOff size={14} /> Encerrar
                                 </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>

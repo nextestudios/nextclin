@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Put, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SuperAdminGuard } from './admin.guard';
@@ -59,6 +59,19 @@ export class AdminTenantsController {
         if (!tenant) throw new NotFoundException('Tenant não encontrado.');
         // Atributo active não existe em Tenant. Este endpoint fakes success ou precisa alterar entity.
         return { success: true, tenantId: id, active: dto.active };
+    }
+
+    @Put(':id')
+    async updateTenant(@Param('id') id: string, @Body() dto: { name?: string; cnpj?: string }) {
+        const tenant = await this.tenantsRepo.findOne({ where: { id } });
+        if (!tenant) throw new NotFoundException('Tenant não encontrado.');
+        if (dto.name) {
+            tenant.name = dto.name;
+            tenant.slug = dto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        }
+        if (dto.cnpj !== undefined) (tenant as any).cnpj = dto.cnpj;
+        await this.tenantsRepo.save(tenant);
+        return { success: true, tenant };
     }
 
     @Post()

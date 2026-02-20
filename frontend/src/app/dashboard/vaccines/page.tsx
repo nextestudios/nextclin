@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import api from '../../../services/api';
-import { Syringe, Plus, X, CheckCircle2, Box, Info, Trash2 } from 'lucide-react';
+import { Syringe, Plus, X, CheckCircle2, Box, Info, Trash2, Edit } from 'lucide-react';
 
 interface Vaccine { id: string; name: string; manufacturer: string; totalDoses: number; salePrice: number; batches: any[] }
 
 export default function VaccinesPage() {
     const [vaccines, setVaccines] = useState<Vaccine[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ name: '', manufacturer: '', totalDoses: 1, doseIntervalDays: 0, costPrice: 0, salePrice: 0 });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const emptyForm = { name: '', manufacturer: '', totalDoses: 1, doseIntervalDays: 0, costPrice: 0, salePrice: 0 };
+    const [form, setForm] = useState(emptyForm);
 
     useEffect(() => { loadVaccines(); }, []);
 
@@ -19,8 +21,29 @@ export default function VaccinesPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        try { await api.post('/vaccines', form); setShowForm(false); loadVaccines(); }
-        catch (err: any) { alert(err.response?.data?.message || 'Erro'); }
+        try {
+            if (editingId) {
+                await api.put(`/vaccines/${editingId}`, form);
+            } else {
+                await api.post('/vaccines', form);
+            }
+            setForm(emptyForm);
+            setEditingId(null);
+            setShowForm(false);
+            loadVaccines();
+        } catch (err: any) { alert(err.response?.data?.message || 'Erro'); }
+    }
+
+    function startEdit(v: Vaccine) {
+        setEditingId(v.id);
+        setForm({ name: v.name, manufacturer: v.manufacturer || '', totalDoses: v.totalDoses || 1, doseIntervalDays: 0, costPrice: 0, salePrice: v.salePrice || 0 });
+        setShowForm(true);
+    }
+
+    function cancelForm() {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
     }
 
     return (
@@ -36,7 +59,7 @@ export default function VaccinesPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelForm() : setShowForm(true)}
                     className={showForm ? "saas-button-secondary" : "saas-button-primary"}
                 >
                     {showForm ? <><X size={18} /> Fechar</> : <><Plus size={18} /> Cadastrar Nova Vacina</>}
@@ -44,8 +67,8 @@ export default function VaccinesPage() {
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4">Dados do Imunizante</h3>
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${editingId ? 'border-t-amber-500' : 'border-t-teal-600'}`}>
+                    <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4">{editingId ? '✏️ Editar Vacina' : 'Dados do Imunizante'}</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
@@ -81,9 +104,9 @@ export default function VaccinesPage() {
                     </div>
 
                     <div className="mt-8 flex justify-end border-t border-slate-100 pt-6 gap-3">
-                        <button type="button" onClick={() => setShowForm(false)} className="saas-button-secondary">Cancelar</button>
-                        <button type="submit" className="saas-button-primary">
-                            <CheckCircle2 size={18} /> Salvar no Catálogo
+                        <button type="button" onClick={() => cancelForm()} className="saas-button-secondary">Cancelar</button>
+                        <button type="submit" className={editingId ? 'saas-button-primary bg-amber-600 hover:bg-amber-700' : 'saas-button-primary'}>
+                            <CheckCircle2 size={18} /> {editingId ? 'Salvar Alterações' : 'Salvar no Catálogo'}
                         </button>
                     </div>
                 </form>
@@ -125,6 +148,13 @@ export default function VaccinesPage() {
                                     <div className="text-xs font-medium text-slate-500">
                                         Esquema: {v.totalDoses} dose(s)
                                     </div>
+                                    <button
+                                        onClick={() => startEdit(v)}
+                                        className="p-1.5 text-teal-500 hover:bg-teal-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"
+                                        title="Editar"
+                                    >
+                                        <Edit size={14} />
+                                    </button>
                                     <button
                                         onClick={async () => { if (confirm(`Remover vacina "${v.name}"?`)) { await api.delete(`/vaccines/${v.id}`); loadVaccines(); } }}
                                         className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-sm transition-colors opacity-0 group-hover:opacity-100"

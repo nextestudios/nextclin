@@ -9,12 +9,14 @@ export default function PatientsPage() {
     const [patients, setPatients] = useState<any[]>([]);
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState('');
+    const [editingId, setEditingId] = useState<string | null>(null);
     const router = useRouter();
-    const [form, setForm] = useState({
+    const emptyForm = {
         name: '', cpf: '', birthDate: '', gender: '', phone: '', email: '',
         address: '', city: '', state: '', zipCode: '',
         guardianName: '', guardianCpf: '', guardianPhone: '', notes: '',
-    });
+    };
+    const [form, setForm] = useState(emptyForm);
 
     const loadPatients = () => {
         api.get('/patients').then(r => setPatients(r.data)).catch(console.error);
@@ -24,13 +26,35 @@ export default function PatientsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/patients', form);
+            if (editingId) {
+                await api.put(`/patients/${editingId}`, form);
+            } else {
+                await api.post('/patients', form);
+            }
             loadPatients();
             setShowForm(false);
-            setForm({ name: '', cpf: '', birthDate: '', gender: '', phone: '', email: '', address: '', city: '', state: '', zipCode: '', guardianName: '', guardianCpf: '', guardianPhone: '', notes: '' });
+            setEditingId(null);
+            setForm(emptyForm);
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Erro ao cadastrar paciente');
+            alert(err.response?.data?.message || 'Erro ao salvar paciente');
         }
+    };
+
+    const startEdit = (p: any) => {
+        setEditingId(p.id);
+        setForm({
+            name: p.name || '', cpf: p.cpf || '', birthDate: p.birthDate ? p.birthDate.slice(0, 10) : '', gender: p.gender || '',
+            phone: p.phone || '', email: p.email || '', address: p.address || '', city: p.city || '',
+            state: p.state || '', zipCode: p.zipCode || '', guardianName: p.guardianName || '',
+            guardianCpf: p.guardianCpf || '', guardianPhone: p.guardianPhone || '', notes: p.notes || '',
+        });
+        setShowForm(true);
+    };
+
+    const cancelForm = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
     };
 
     const filtered = patients.filter(p =>
@@ -51,11 +75,11 @@ export default function PatientsPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelForm() : setShowForm(true)}
                     className={showForm ? "saas-button-secondary" : "saas-button-primary"}
                 >
                     {showForm ? (
-                        <><X size={18} /> Cancelar Cadastro</>
+                        <><X size={18} /> Cancelar</>
                     ) : (
                         <><Plus size={18} /> Novo Paciente</>
                     )}
@@ -63,11 +87,11 @@ export default function PatientsPage() {
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${editingId ? 'border-t-amber-500' : 'border-t-teal-600'}`}>
                     <div className="mb-8 border-b border-slate-100 pb-4">
                         <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Users size={18} className="text-teal-600" />
-                            Dados Pessoais
+                            <Users size={18} className={editingId ? 'text-amber-500' : 'text-teal-600'} />
+                            {editingId ? '✏️ Editar Paciente' : 'Dados Pessoais'}
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -152,8 +176,8 @@ export default function PatientsPage() {
                     </div>
 
                     <div className="flex justify-end border-t border-slate-100 pt-6">
-                        <button type="submit" className="saas-button-primary">
-                            <CheckCircle size={18} /> Cadastrar Paciente
+                        <button type="submit" className={editingId ? 'saas-button-primary bg-amber-600 hover:bg-amber-700' : 'saas-button-primary'}>
+                            <CheckCircle size={18} /> {editingId ? 'Salvar Alterações' : 'Cadastrar Paciente'}
                         </button>
                     </div>
                 </form>
@@ -222,7 +246,7 @@ export default function PatientsPage() {
                                                     <button onClick={() => router.push(`/dashboard/patients/${p.id}`)} className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-sm transition-colors" title="Ver Prontuário">
                                                         <Eye size={16} />
                                                     </button>
-                                                    <button onClick={() => router.push(`/dashboard/patients/${p.id}`)} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-sm transition-colors" title="Editar">
+                                                    <button onClick={() => startEdit(p)} className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-sm transition-colors" title="Editar">
                                                         <Edit size={16} />
                                                     </button>
                                                     <button onClick={async () => { if (confirm('Tem certeza que deseja excluir este paciente?')) { await api.delete(`/patients/${p.id}`); loadPatients(); } }} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-sm transition-colors" title="Excluir">

@@ -5,7 +5,7 @@ import api from '../../../services/api';
 import {
     Users, Plus, X, Stethoscope,
     BriefcaseMedical, Settings2, Mail, Phone,
-    ShieldBan, CheckCircle2
+    ShieldBan, CheckCircle2, Edit
 } from 'lucide-react';
 
 interface Professional {
@@ -21,7 +21,9 @@ interface Professional {
 export default function ProfessionalsPage() {
     const [professionals, setProfessionals] = useState<Professional[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ name: '', type: 'NURSE', councilNumber: '', phone: '', email: '' });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const emptyForm = { name: '', type: 'NURSE', councilNumber: '', phone: '', email: '' };
+    const [form, setForm] = useState(emptyForm);
 
     useEffect(() => { loadProfessionals(); }, []);
 
@@ -31,10 +33,27 @@ export default function ProfessionalsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await api.post('/professionals', form);
-        setForm({ name: '', type: 'NURSE', councilNumber: '', phone: '', email: '' });
+        if (editingId) {
+            await api.put(`/professionals/${editingId}`, form);
+        } else {
+            await api.post('/professionals', form);
+        }
+        setForm(emptyForm);
+        setEditingId(null);
         setShowForm(false);
         loadProfessionals();
+    };
+
+    const startEdit = (p: Professional) => {
+        setEditingId(p.id);
+        setForm({ name: p.name, type: p.type, councilNumber: p.councilNumber || '', phone: p.phone || '', email: p.email || '' });
+        setShowForm(true);
+    };
+
+    const cancelForm = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
     };
 
     const handleDeactivate = async (id: string) => {
@@ -55,17 +74,17 @@ export default function ProfessionalsPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelForm() : setShowForm(true)}
                     className={showForm ? "saas-button-secondary" : "saas-button-primary"}
                 >
-                    {showForm ? <><X size={18} /> Cancelar Cadastro</> : <><Plus size={18} /> Cadastrar Profissional</>}
+                    {showForm ? <><X size={18} /> Cancelar</> : <><Plus size={18} /> Cadastrar Profissional</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${editingId ? 'border-t-amber-500' : 'border-t-teal-600'}`}>
                     <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4">
-                        Perfil do Colaborador
+                        {editingId ? '✏️ Editar Profissional' : 'Perfil do Colaborador'}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -94,8 +113,8 @@ export default function ProfessionalsPage() {
                         </div>
                     </div>
                     <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
-                        <button type="submit" className="saas-button-primary">
-                            <CheckCircle2 size={18} /> Efetivar Registro
+                        <button type="submit" className={editingId ? 'saas-button-primary bg-amber-600 hover:bg-amber-700' : 'saas-button-primary'}>
+                            <CheckCircle2 size={18} /> {editingId ? 'Salvar Alterações' : 'Efetivar Registro'}
                         </button>
                     </div>
                 </form>
@@ -149,16 +168,24 @@ export default function ProfessionalsPage() {
                                         {p.email && <div className="flex items-center gap-1.5 text-xs text-slate-500"><Mail size={12} className="opacity-50" /> {p.email}</div>}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        {p.active ? (
+                                        <div className="flex items-center gap-2 justify-end">
                                             <button
-                                                onClick={() => handleDeactivate(p.id)}
-                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 ml-auto shadow-sm"
+                                                onClick={() => startEdit(p)}
+                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-sm hover:border-teal-500 hover:text-teal-700 hover:bg-teal-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
                                             >
-                                                <ShieldBan size={14} /> Revogar Acesso
+                                                <Edit size={14} /> Editar
                                             </button>
-                                        ) : (
-                                            <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400">Revogado</span>
-                                        )}
+                                            {p.active ? (
+                                                <button
+                                                    onClick={() => handleDeactivate(p.id)}
+                                                    className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
+                                                >
+                                                    <ShieldBan size={14} /> Revogar
+                                                </button>
+                                            ) : (
+                                                <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400">Revogado</span>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

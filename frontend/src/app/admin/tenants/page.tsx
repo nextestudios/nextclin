@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, ChevronRight, CheckCircle, XCircle, Plus, X, Save } from 'lucide-react';
+import { Search, ChevronRight, CheckCircle, XCircle, Plus, X, Save, Edit } from 'lucide-react';
 import Link from 'next/link';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -12,9 +12,9 @@ export default function AdminTenantsPage() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [newTenant, setNewTenant] = useState({
-        name: '', cnpj: '', plan: 'FREE', adminName: '', adminEmail: '', adminPassword: ''
-    });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const emptyTenant = { name: '', cnpj: '', plan: 'FREE', adminName: '', adminEmail: '', adminPassword: '' };
+    const [newTenant, setNewTenant] = useState(emptyTenant);
 
     const loadTenants = () => {
         setLoading(true);
@@ -41,18 +41,37 @@ export default function AdminTenantsPage() {
         setTenants(ts => ts.map(t => t.id === id ? { ...t, active } : t));
     };
 
+    const startEdit = (t: any) => {
+        setEditingId(t.id);
+        setNewTenant({ name: t.name || '', cnpj: t.cnpj || '', plan: t.plan || 'FREE', adminName: '', adminEmail: '', adminPassword: '' });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setEditingId(null);
+        setNewTenant(emptyTenant);
+    };
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         const token = localStorage.getItem('admin_token') || '';
-        await fetch(`${API}/admin/tenants`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(newTenant),
-        });
+        if (editingId) {
+            await fetch(`${API}/admin/tenants/${editingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ name: newTenant.name, cnpj: newTenant.cnpj }),
+            });
+        } else {
+            await fetch(`${API}/admin/tenants`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(newTenant),
+            });
+        }
         setSaving(false);
-        setIsModalOpen(false);
-        setNewTenant({ name: '', cnpj: '', plan: 'FREE', adminName: '', adminEmail: '', adminPassword: '' });
+        closeModal();
         loadTenants();
     };
 
@@ -117,6 +136,10 @@ export default function AdminTenantsPage() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
+                                            <button onClick={() => startEdit(t)}
+                                                className="text-xs text-gray-400 hover:text-teal-400 transition-colors flex items-center gap-0.5">
+                                                <Edit size={10} /> Editar
+                                            </button>
                                             <button onClick={() => toggleStatus(t.id, !t.active)}
                                                 className="text-xs text-gray-400 hover:text-teal-400 transition-colors">
                                                 {t.active !== false ? 'Suspender' : 'Ativar'}
@@ -139,10 +162,10 @@ export default function AdminTenantsPage() {
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-2xl p-6 shadow-2xl">
+                    <div className={`bg-gray-900 border rounded-xl w-full max-w-2xl p-6 shadow-2xl ${editingId ? 'border-amber-500/50' : 'border-gray-800'}`}>
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-white">Cadastrar Nova Clínica</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
+                            <h2 className="text-lg font-bold text-white">{editingId ? '✏️ Editar Clínica' : 'Cadastrar Nova Clínica'}</h2>
+                            <button onClick={() => closeModal()} className="text-gray-400 hover:text-white"><X size={20} /></button>
                         </div>
                         <form onSubmit={handleCreate} className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
@@ -169,33 +192,35 @@ export default function AdminTenantsPage() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-800">
-                                <h3 className="text-sm font-semibold text-white mb-4">Usuário Administrador (Dono)</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2 md:col-span-1">
-                                        <label className="text-xs text-gray-400 mb-1 block">Nome do Admin</label>
-                                        <input value={newTenant.adminName} onChange={e => setNewTenant(t => ({ ...t, adminName: e.target.value }))}
-                                            placeholder="Nome completo" required
-                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
-                                    </div>
-                                    <div className="col-span-2 md:col-span-1">
-                                        <label className="text-xs text-gray-400 mb-1 block">E-mail do Admin</label>
-                                        <input type="email" value={newTenant.adminEmail} onChange={e => setNewTenant(t => ({ ...t, adminEmail: e.target.value }))}
-                                            placeholder="admin@clinica.com" required
-                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <label className="text-xs text-gray-400 mb-1 block">Senha Inicial</label>
-                                        <input type="password" value={newTenant.adminPassword} onChange={e => setNewTenant(t => ({ ...t, adminPassword: e.target.value }))}
-                                            placeholder="••••••••" required
-                                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
+                            {!editingId && (
+                                <div className="pt-4 border-t border-gray-800">
+                                    <h3 className="text-sm font-semibold text-white mb-4">Usuário Administrador (Dono)</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="text-xs text-gray-400 mb-1 block">Nome do Admin</label>
+                                            <input value={newTenant.adminName} onChange={e => setNewTenant(t => ({ ...t, adminName: e.target.value }))}
+                                                placeholder="Nome completo" required
+                                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="text-xs text-gray-400 mb-1 block">E-mail do Admin</label>
+                                            <input type="email" value={newTenant.adminEmail} onChange={e => setNewTenant(t => ({ ...t, adminEmail: e.target.value }))}
+                                                placeholder="admin@clinica.com" required
+                                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="text-xs text-gray-400 mb-1 block">Senha Inicial</label>
+                                            <input type="password" value={newTenant.adminPassword} onChange={e => setNewTenant(t => ({ ...t, adminPassword: e.target.value }))}
+                                                placeholder="••••••••" required
+                                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             <div className="flex justify-end pt-4 border-t border-gray-800">
-                                <button type="submit" disabled={saving} className="bg-teal-600 hover:bg-teal-500 text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                                    <Save size={16} /> {saving ? 'Salvando...' : 'Cadastrar Clínica'}
+                                <button type="submit" disabled={saving} className={`${editingId ? 'bg-amber-600 hover:bg-amber-500' : 'bg-teal-600 hover:bg-teal-500'} text-white px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2`}>
+                                    <Save size={16} /> {saving ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Cadastrar Clínica'}
                                 </button>
                             </div>
                         </form>

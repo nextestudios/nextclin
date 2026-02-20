@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { ShieldCheck, Plus, X, Handshake, ShieldBan, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Plus, X, Handshake, ShieldBan, CheckCircle2, Edit } from 'lucide-react';
 
 interface Insurance {
     id: string;
@@ -15,7 +15,9 @@ interface Insurance {
 export default function InsurancesPage() {
     const [insurances, setInsurances] = useState<Insurance[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ name: '', ansCode: '', discountPercent: 0 });
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const emptyForm = { name: '', ansCode: '', discountPercent: 0 };
+    const [form, setForm] = useState(emptyForm);
 
     useEffect(() => { loadInsurances(); }, []);
 
@@ -25,10 +27,27 @@ export default function InsurancesPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await api.post('/insurances', form);
-        setForm({ name: '', ansCode: '', discountPercent: 0 });
+        if (editingId) {
+            await api.put(`/insurances/${editingId}`, form);
+        } else {
+            await api.post('/insurances', form);
+        }
+        setForm(emptyForm);
+        setEditingId(null);
         setShowForm(false);
         loadInsurances();
+    };
+
+    const startEdit = (ins: Insurance) => {
+        setEditingId(ins.id);
+        setForm({ name: ins.name, ansCode: ins.ansCode || '', discountPercent: ins.discountPercent || 0 });
+        setShowForm(true);
+    };
+
+    const cancelForm = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
     };
 
     const handleDeactivate = async (id: string) => {
@@ -49,18 +68,18 @@ export default function InsurancesPage() {
                     </div>
                 </div>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => showForm ? cancelForm() : setShowForm(true)}
                     className={showForm ? "saas-button-secondary" : "saas-button-primary"}
                 >
-                    {showForm ? <><X size={18} /> Cancelar Cadastro</> : <><Plus size={18} /> Homologar Convênio</>}
+                    {showForm ? <><X size={18} /> Cancelar</> : <><Plus size={18} /> Homologar Convênio</>}
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="saas-card p-8 bg-white border-t-4 border-t-teal-600">
+                <form onSubmit={handleSubmit} className={`saas-card p-8 bg-white border-t-4 ${editingId ? 'border-t-amber-500' : 'border-t-teal-600'}`}>
                     <h3 className="text-lg font-semibold text-slate-800 mb-6 border-b border-slate-100 pb-4 flex items-center gap-2">
-                        <Handshake size={20} className="text-teal-600" />
-                        Nova Entidade Parceira
+                        <Handshake size={20} className={editingId ? 'text-amber-500' : 'text-teal-600'} />
+                        {editingId ? '✏️ Editar Convênio' : 'Nova Entidade Parceira'}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="md:col-span-2">
@@ -80,8 +99,8 @@ export default function InsurancesPage() {
                         </div>
                     </div>
                     <div className="mt-8 flex justify-end border-t border-slate-100 pt-6">
-                        <button type="submit" className="saas-button-primary">
-                            <CheckCircle2 size={18} /> Homologar Parceiro
+                        <button type="submit" className={editingId ? 'saas-button-primary bg-amber-600 hover:bg-amber-700' : 'saas-button-primary'}>
+                            <CheckCircle2 size={18} /> {editingId ? 'Salvar Alterações' : 'Homologar Parceiro'}
                         </button>
                     </div>
                 </form>
@@ -128,17 +147,25 @@ export default function InsurancesPage() {
                                             {ins.active ? 'Vigente' : 'Descredenciado'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right flex justify-end">
-                                        {ins.active ? (
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                        <div className="flex items-center gap-2 justify-end">
                                             <button
-                                                onClick={() => handleDeactivate(ins.id)}
-                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
+                                                onClick={() => startEdit(ins)}
+                                                className="text-[11px] font-bold tracking-wider uppercase bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-sm hover:border-teal-500 hover:text-teal-700 hover:bg-teal-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
                                             >
-                                                <ShieldBan size={14} /> Suspender
+                                                <Edit size={14} /> Editar
                                             </button>
-                                        ) : (
-                                            <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400 mr-2">Sem Cobertura</span>
-                                        )}
+                                            {ins.active ? (
+                                                <button
+                                                    onClick={() => handleDeactivate(ins.id)}
+                                                    className="text-[11px] font-bold tracking-wider uppercase bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded-sm hover:border-rose-500 hover:text-rose-800 hover:bg-rose-50 transition-colors flex items-center gap-1.5 opacity-0 group-hover:opacity-100 shadow-sm"
+                                                >
+                                                    <ShieldBan size={14} /> Suspender
+                                                </button>
+                                            ) : (
+                                                <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400">Sem Cobertura</span>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
